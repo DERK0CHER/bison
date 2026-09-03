@@ -22,11 +22,22 @@ object CardImport {
         /** Fields and fenced blocks, written by hand */
         CardFile,
 
+        /** The written set: one Markdown file, three fields, its own card kinds */
+        WrittenSet,
+
         /** JSON, or prose with lettered options, written by a language model */
         Questions,
     }
 
     fun parse(text: String): Result {
+        // The written set names its own card kinds, and none of them is a kind the older format
+        // knows, so one line of it is enough to tell the two apart with no guessing.
+        if (WRITTEN_SET.containsMatchIn(text)) {
+            val found = MarkdownCards.parse(text)
+            if (found.cards.isNotEmpty()) {
+                return Result(found.cards, found.skipped, Format.WrittenSet)
+            }
+        }
         if (looksLikeCardFile(text)) {
             val found = CardFileParser.parse(text)
             // a file that yielded nothing at all was probably not one; let the other parser try
@@ -45,4 +56,8 @@ object CardImport {
         }
 
     private val MARKERS = listOf("front:", "type:", "back:")
+
+    /** A card kind only the written set has */
+    private val WRITTEN_SET =
+        Regex("""^type:\s*(logik|syntax|param|sc|trace|fehler)\s*$""", RegexOption.MULTILINE)
 }

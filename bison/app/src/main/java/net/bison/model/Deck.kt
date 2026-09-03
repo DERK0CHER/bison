@@ -38,6 +38,13 @@ data class Card(
     val mode: CardMode
         get() =
             when {
+                task is StudyCard ->
+                    when {
+                        task.kind == CardKind.Sc -> CardMode.Pick
+                        task.isTyped -> CardMode.Answer
+                        else -> CardMode.Flip
+                    }
+
                 task is GeneratedTask -> CardMode.Generate
                 task is SketchTask -> CardMode.Reveal
                 task !is CodeTask -> CardMode.Choose
@@ -103,6 +110,15 @@ enum class CardMode {
 
     /** Answer it on paper, then look at the answer and say whether you had it */
     Reveal,
+
+    /** Turn it over: the reasoning first, the answer on the second tap */
+    Flip,
+
+    /** Write the answer out and have it compared */
+    Answer,
+
+    /** Three options, a, b and c */
+    Pick,
 }
 
 /**

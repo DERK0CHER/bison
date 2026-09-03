@@ -61,6 +61,7 @@ import net.bison.model.CodeTask
 import net.bison.model.GeneratedTask
 import net.bison.model.Question
 import net.bison.model.SketchTask
+import net.bison.model.StudyCard
 import net.bison.ui.theme.BisonColors
 import net.bison.ui.theme.BisonMotion
 import net.bison.ui.theme.BisonShape
@@ -247,6 +248,39 @@ fun StudyScreen(
                                 picked = position
                                 if (soundOn) feedback.play(correct = position == choice.correctPosition)
                             }
+                        },
+                    )
+
+                shown.mode == CardMode.Flip ->
+                    FlipRound(
+                        card = shown.task as StudyCard,
+                        round = target.line,
+                        onSubmit = { correct ->
+                            if (soundOn) feedback.play(correct = correct)
+                            record(correct)
+                        },
+                    )
+
+                shown.mode == CardMode.Pick ->
+                    PickRound(
+                        card = shown.task as StudyCard,
+                        round = target.line,
+                        onSubmit = { correct ->
+                            if (soundOn) feedback.play(correct = correct)
+                            record(correct)
+                        },
+                    )
+
+                shown.mode == CardMode.Answer ->
+                    AnswerRound(
+                        card = shown.task as StudyCard,
+                        round = target.line,
+                        // the round's own number, so a parametrised card stands still while it
+                        // is answered and asks something else when it comes back
+                        seed = target.index,
+                        onSubmit = { correct ->
+                            if (soundOn) feedback.play(correct = correct)
+                            record(correct)
                         },
                     )
 

@@ -6,6 +6,7 @@ import net.bison.model.Deck
 import net.bison.model.GeneratedTask
 import net.bison.model.Question
 import net.bison.model.SketchTask
+import net.bison.model.StudyCard
 import kotlin.random.Random
 
 /**
@@ -74,6 +75,9 @@ data class ExamItem(
                 is GeneratedTask -> true
                 is CodeTask -> asked.isOneLiner
                 is SketchTask -> false
+                // a written card has no place on a mock paper yet, and guessing at one would
+                // put marks on the sheet that nobody awarded
+                is StudyCard -> false
             }
 
     /** Whether anything was written or ticked at all */
@@ -91,6 +95,7 @@ data class ExamItem(
                 is GeneratedTask -> rolled?.matches(written.orEmpty()) == true
                 is CodeTask -> asked.accepted.any { LineDiff.sameLine(written.orEmpty(), it) }
                 is SketchTask -> false
+                is StudyCard -> false
             }
 }
 

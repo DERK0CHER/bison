@@ -107,6 +107,9 @@ enum class SymbolSet {
 
     /** The six digits a number keyboard does not have */
     Hex,
+
+    /** What the written card set asks for: MATLAB and C punctuation, nothing else */
+    Study,
 }
 
 /** The characters a German phone keyboard hides three menus deep, on one scrolling row */
@@ -119,7 +122,13 @@ fun SymbolBar(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
     ) {
-        for (symbol in if (set == SymbolSet.Hex) HEX else SYMBOLS) {
+        val offered =
+            when (set) {
+                SymbolSet.Hex -> HEX
+                SymbolSet.Study -> STUDY
+                else -> SYMBOLS
+            }
+        for (symbol in offered) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier =
@@ -192,4 +201,33 @@ private val HEX =
         Symbol("e"),
         Symbol("f"),
         Symbol("0x"),
+    )
+
+/**
+ * Exactly what the written set asks for.
+ *
+ * MATLAB and C punctuation and nothing else: these are the characters an answer needs and a
+ * German phone keyboard hides two layouts deep, and a bar that also offered the ones it does not
+ * need would make the ones it does harder to hit.
+ */
+private val STUDY =
+    listOf(
+        Symbol("["),
+        Symbol("]"),
+        Symbol("("),
+        Symbol(")"),
+        Symbol("'"),
+        Symbol(";"),
+        Symbol(":"),
+        Symbol(","),
+        Symbol("."),
+        Symbol("^"),
+        Symbol("="),
+        Symbol("*"),
+        Symbol("&"),
+        Symbol("{"),
+        Symbol("}"),
+        Symbol("->"),
+        Symbol("<"),
+        Symbol(">"),
     )

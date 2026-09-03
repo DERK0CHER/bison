@@ -3,12 +3,14 @@ package net.bison.data
 import android.content.Context
 import net.bison.model.BitOp
 import net.bison.model.Card
+import net.bison.model.CardKind
 import net.bison.model.CodeTask
 import net.bison.model.Deck
 import net.bison.model.GenKind
 import net.bison.model.GeneratedTask
 import net.bison.model.Question
 import net.bison.model.SketchTask
+import net.bison.model.StudyCard
 import net.bison.model.Subtopic
 import net.bison.model.Task
 import org.json.JSONArray
@@ -125,6 +127,16 @@ class DeckStore(
                         .put("alt", JSONArray().also { alt -> task.alternatives.forEach(alt::put) })
                         .put("sorted", card.sorted)
 
+                is StudyCard -> {
+                    json
+                        .put("type", STUDY)
+                        .put("kind", task.kind.name)
+                        .put("back", task.back)
+                        .put("alt", JSONArray().also { alt -> task.alternatives.forEach(alt::put) })
+                    task.logic?.let { json.put("logik", it) }
+                    task.params?.let { json.put("params", it) }
+                }
+
                 is SketchTask -> {
                     json.put("type", SKETCH)
                     task.answerImage?.let { json.put("answerImage", it) }
@@ -231,6 +243,21 @@ class DeckStore(
                 )
             }
 
+            STUDY -> {
+                val kind = CardKind.entries.firstOrNull { it.name == json.optString("kind") } ?: return null
+                val back = json.optString("back").takeIf { it.isNotEmpty() } ?: return null
+                StudyCard(
+                    kind = kind,
+                    prompt = prompt,
+                    back = back,
+                    logic = json.optString("logik").takeIf { it.isNotEmpty() },
+                    alternatives = decodeStrings(json.optJSONArray("alt")),
+                    params = json.optString("params").takeIf { it.isNotEmpty() },
+                    topic = topic,
+                    tags = tags,
+                )
+            }
+
             SKETCH ->
                 SketchTask(
                     prompt = prompt,
@@ -301,11 +328,12 @@ class DeckStore(
          * which is the right answer for a set that has been sitting there since before there
          * were dates at all.
          */
-        private const val VERSION = 7
+        private const val VERSION = 8
 
         private const val CHOICE = "choice"
         private const val CODE = "code"
         private const val GEN = "gen"
         private const val SKETCH = "sketch"
+        private const val STUDY = "study"
     }
 }
