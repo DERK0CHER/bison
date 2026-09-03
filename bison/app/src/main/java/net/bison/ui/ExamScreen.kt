@@ -47,6 +47,7 @@ import net.bison.model.CodeTask
 import net.bison.model.GeneratedTask
 import net.bison.model.Question
 import net.bison.model.SketchTask
+import net.bison.model.StudyCard
 import net.bison.ui.theme.BisonColors
 import net.bison.ui.theme.BisonShape
 
@@ -253,6 +254,15 @@ private fun Paper(
         }
 
         is CodeTask -> Written(item = item, at = at, onWrite = onWrite, oneLine = asked.isOneLiner)
+
+        // A card out of the written set is answered in its own screen, where it has its three
+        // sides and its own comparison. Drawing it here would need all of that a second time
+        // for a mode nobody asked to have it in, so the paper says what it is instead.
+        is StudyCard -> {
+            Caption(text = "SELBST BEWERTEN")
+            Spacer(Modifier.height(10.dp))
+            Written(item = item, at = at, onWrite = onWrite, oneLine = !asked.isTyped)
+        }
 
         is SketchTask -> {
             Caption(text = "AUF PAPIER BEANTWORTEN")
