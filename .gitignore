@@ -1,0 +1,19 @@
+# Gradle
+.gradle/
+build/
+local.properties
+
+# built application files
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Java/Kotlin
+*.class
+captures/
+
+# IDE
+.idea/
+*.iml
+.DS_Store

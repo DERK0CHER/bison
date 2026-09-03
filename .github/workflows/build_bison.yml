@@ -1,0 +1,159 @@
+name: Build Bison
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+      - 'claude/**'
+    paths:
+      - 'bison/**'
+      - '.github/workflows/build_bison.yml'
+
+permissions:
+  # `contents: write` so the build can publish the APK as a release asset
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Bison APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: bison
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # JetBrains JDK 21, which is what the Gradle and AGP versions below expect
+      - name: Configure JDK
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: "jetbrains"
+          java-version: "21"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+        timeout-minutes: 10
+        with:
+          cache-provider: basic
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Assemble
+        run: ./gradlew :app:assembleDebug :app:assembleRelease
+
+      # Draws the real Compose screens to PNGs. This job has no emulator, so this is how the
+      # interface gets seen here; the images are committed back so they can be reviewed. It has
+      # to be the record task - captureRoboImage writes nothing under a plain test run.
+      - name: Render screenshots
+        run: ./gradlew :app:recordRoborazziDebug
+
+      - name: Commit the screenshots
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          mkdir -p screenshots
+          find app/build/outputs/roborazzi -name '*.png' -exec cp {} screenshots/ \; || true
+          cd "$GITHUB_WORKSPACE"
+          if [ -z "$(git status --porcelain bison/screenshots)" ]; then
+            echo "screenshots unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bison/screenshots
+          git commit -m "chore(bison): refresh rendered screenshots [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: List produced APKs
+        if: always()
+        run: find app/build/outputs/apk -name '*.apk' -exec ls -la {} + || true
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bison-apk
+          path: bison/app/build/outputs/apk/**/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      # A plain .apk on a stable URL, so it can be tapped straight from a phone browser
+      - name: Publish as a rolling release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="bison-latest"
+          notes="Automatic Bison build of ${GITHUB_SHA:0:7}.
+
+          Install the release APK. It carries the application id net.bison."
+          gh release delete "$tag" --yes --cleanup-tag || true
+          gh release create "$tag" \
+            --title "Bison — latest build" \
+            --notes "$notes" \
+            --prerelease \
+            $(find app/build/outputs/apk -name '*.apk' | sort)
+
+  # The handful of questions a picture cannot answer: whether a gesture is recognised, whether
+  # the input system delivers what a finger produces. The JVM tests supply their own clock, and
+  # a long press cannot be asked about on a clock that the asker is winding.
+  gestures:
+    name: Gesten auf einem Emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Configure JDK
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: "jetbrains"
+          java-version: "21"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+        timeout-minutes: 10
+        with:
+          cache-provider: basic
+          cache-read-only: true
+
+      # The runner can nest virtual machines but does not hand out the device by default, and
+      # without it the emulator falls back to software and takes longer than the job may run.
+      - name: Hand out KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the gesture tests
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          profile: pixel_5
+          ram-size: 2048M
+          # animations turn a tap into something that arrives late, which is how flaky UI tests
+          # are born
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          working-directory: bison
+          script: ./gradlew :app:connectedDebugAndroidTest
+
+      - name: Keep the report, which is the only thing that says why
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bison-gesture-report
+          path: bison/app/build/reports/androidTests/
+          retention-days: 14
+          if-no-files-found: ignore

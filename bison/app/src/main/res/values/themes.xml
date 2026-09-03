@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A framework theme, so the app needs neither AppCompat nor the Material views library.
+         Everything visible is drawn by Compose; this only paints the window behind it. -->
+    <style name="Theme.Bison" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bison_background</item>
+        <item name="android:statusBarColor">@color/bison_background</item>
+        <item name="android:navigationBarColor">@color/bison_background</item>
+    </style>
+</resources>
