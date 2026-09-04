@@ -97,9 +97,13 @@ object MarkdownCards {
             if (key != null && key in FIELDS) {
                 current = StringBuilder(field.groupValues[2].trim())
                 fields[key] = current
-            } else if (current != null && line.isNotBlank()) {
-                // a value runs on until the next field: the code on a trace card, the options
-                // under a single choice question
+            } else if (current != null) {
+                // A value runs on until the next field: the code on a trace card, the options
+                // under a single choice question, the answer to a timed one.
+                //
+                // Blank lines belong to it. A C answer separates its include from its struct
+                // with one, and swallowing that would reformat the very thing being learned.
+                // Blank lines at the end fall away when the value is trimmed.
                 current.append('\n').append(line.trimEnd())
             }
         }

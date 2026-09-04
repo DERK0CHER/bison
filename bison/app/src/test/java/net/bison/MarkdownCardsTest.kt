@@ -154,6 +154,88 @@ class MarkdownCardsTest {
     }
 
     @Test
+    fun `a timed card keeps its target, and the blank lines inside its answer`() {
+        val timed =
+            """
+            ## Subsection: C / Zeit
+
+            ---
+            type: zeit
+            ziel: 180
+            front: Definiere in node.h die Datenstruktur Node für eine doppelt verkettete Liste.
+            logik: Struktur-Tag klein, typedef-Name groß.
+            back: #include "flugzeug.h"
+
+            typedef struct node {
+                Flugzeug i;
+                struct node *next;
+            } Node;
+            tags: c, zeit
+            """.trimIndent()
+
+        val card = MarkdownCards.parse(timed).cards.single() as StudyCard
+
+        assertEquals(CardKind.Zeit, card.kind)
+        assertEquals(180, card.target)
+        // the blank line between the include and the struct is part of how the code reads
+        assertTrue(card.back, card.back.contains("flugzeug.h\"\n\ntypedef"))
+        assertTrue(card.back.trimEnd().endsWith("} Node;"))
+        // the field order is free: ziel came before front here
+        assertTrue(card.prompt.startsWith("Definiere in node.h"))
+    }
+
+    @Test
+    fun `single choice options may be written as three fields`() {
+        val fields =
+            """
+            ## Subsection: C / Single Choice
+
+            ---
+            type: sc
+            front: Was gilt für `int k=6, j, *p;`?
+            a: j und k sind Pointer
+            b: j und k sind int, p ist Pointer auf int
+            c: alle drei sind Pointer
+            logik: Stern gehört zum Namen.
+            back: b. Der Stern bindet an den Namen, nicht an den Typ.
+            tags: c, deklaration
+            """.trimIndent()
+
+        val card = MarkdownCards.parse(fields).cards.single() as Question
+
+        assertEquals(3, card.answers.size)
+        assertEquals("j und k sind int, p ist Pointer auf int", card.correctAnswer)
+        assertEquals("Der Stern bindet an den Namen, nicht an den Typ.", card.reason)
+    }
+
+    @Test
+    fun `options on one line each are found as well as options on one line together`() {
+        val perLine =
+            """
+            ## Subsection: C
+
+            ---
+            type: sc
+            front: Merkregel für Pointer in C?
+            a) Zeigt p auf x, kann p überall stehen, wo x gebraucht wird
+            b) Zeigt p auf x, kann *p überall stehen, wo &x gebraucht wird
+            c) Zeigt p auf x, kann *p überall stehen, wo x gebraucht wird
+            logik: Dereferenzierung ersetzt das Objekt.
+            back: c.
+            tags: c
+            """.trimIndent()
+
+        val card = MarkdownCards.parse(perLine).cards.single() as Question
+
+        assertEquals(3, card.answers.size)
+        assertTrue(card.correctAnswer.endsWith("wo x gebraucht wird"))
+        // the option lines are out of the question, and nothing of the question is lost with them
+        assertEquals("Merkregel für Pointer in C?", card.prompt)
+        // an answer that is only a letter leaves no reasoning behind, and that is not a fault
+        assertNull(card.reason)
+    }
+
+    @Test
     fun `a block missing the parts a card needs is counted rather than guessed at`() {
         val broken =
             """

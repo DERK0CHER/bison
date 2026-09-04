@@ -60,7 +60,8 @@ logik: Zuweisung an (Zeile 1, Spalte k) baut die Matrix spaltenweise auf.
 ```
 
 - Einrückung innerhalb des Wertes bleibt erhalten.
-- **Leerzeilen werden verworfen.** Ein Wert kann derzeit keine Leerzeile enthalten.
+- **Leerzeilen gehören zum Wert.** Eine C-Antwort, die ihren `#include` durch eine Leerzeile vom
+  `struct` trennt, behält sie. Leerzeilen am Ende eines Wertes fallen weg.
 - Ein Wert, der selbst mit einem reservierten Namen anfangen soll (`back: ...` als *Text*),
   geht so nicht. Schreib ein Zeichen davor: `> back:` oder `` `back:` ``. Das ist eine bekannte
   Grenze, keine Absicht — sag Bescheid, wenn du sie brauchst, dann kommt eine Escape-Regel dazu.
@@ -190,12 +191,21 @@ tags: matlab, blockmatrix
 ```
 ---
 type: zeit
-front: Schreibe auf Papier eine Funktion, die einen Vektor umdreht, ohne fliplr.
-logik: Schleife von hinten nach vorne, oder Indexvektor end:-1:1.
-back: function y = umdrehen(x)\n  y = x(end:-1:1);\nend
 ziel: 180
-tags: matlab, programmieren
+front: Definiere in node.h die Datenstruktur Node für eine doppelt verkettete Liste.
+logik: Struktur-Tag klein, typedef-Name groß.
+back: #include "flugzeug.h"
+
+typedef struct node {
+    Flugzeug i;
+    struct node *next;
+    struct node *prev;
+} Node;
+tags: c, zeit
 ```
+
+Die Leerzeile zwischen `#include` und `typedef` bleibt erhalten. Die Reihenfolge der Felder ist
+frei — `ziel` darf über `front` stehen.
 
 - `ziel` ist die **Zielzeit in Sekunden**. `ziel: 180` und `ziel: 3:00` bedeuten dasselbe.
 - Die Uhr läuft ab dem Anzeigen der Karte und **weiter, wenn die App im Hintergrund ist** — sie
@@ -296,5 +306,6 @@ Alles andere führt nie zum Überspringen. Unbekannte Felder werden ignoriert.
 
 | Datum | Änderung |
 | --- | --- |
+| 2026-09-04 | Leerzeilen innerhalb eines Feldwertes bleiben erhalten (vorher verworfen). `sc`-Optionen dürfen auch je auf einer eigenen Zeile stehen. |
 | 2026-09-04 | `zeit` und `ziel` aufgenommen. `sc` akzeptiert zusätzlich Felder `a`/`b`/`c`; `sc`-Karten werden beim Import zu normalen Multiple-Choice-Fragen des Bestands, die Optionen werden gemischt und ohne Buchstaben gezeigt. Typografische Anführungszeichen zählen beim Vergleich als gerade. Sonderzeichenleiste um `- + / %` ergänzt. |
 | 2026-09-03 | Erste Fassung: `logik`, `syntax`, `param`, `sc`, `trace`, `fehler`; Felder `type`, `front`, `logik`, `back`, `alt`, `params`, `tags`. |
