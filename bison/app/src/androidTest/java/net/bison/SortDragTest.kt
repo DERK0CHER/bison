@@ -19,6 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 /**
  * The drag, on a real Android, because that is the only place it can be asked.
@@ -49,7 +50,9 @@ class SortDragTest {
                 prompt = "Bring die Zeilen in die richtige Reihenfolge",
                 solution = lines.joinToString("\n"),
             )
-        DeckStore(instrumentation.targetContext).save(
+        // the store is in the shared core now and knows nothing about a Context; the app decides
+        // where an application's own files live, and here the test has to do the same
+        DeckStore(File(instrumentation.targetContext.filesDir, DeckStore.FILE_NAME)).save(
             listOf(Deck("drag", "Sortieren", listOf(Subtopic("drag-0", "Teil", listOf(Card(task)))))),
         )
     }

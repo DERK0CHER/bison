@@ -39,11 +39,14 @@ class ProgressTest {
             topic = "C / Zeit",
         )
 
-    private fun deck(vararg cards: Card) =
-        Deck(
-            id = "swt",
-            name = "Softwarewerkzeuge",
-            subtopics = listOf(Subtopic(id = "swt-1", name = "Alles", cards = cards.toList())),
+    /** One set holding these cards, in the shape everything here takes and hands back */
+    private fun decks(vararg cards: Card) =
+        listOf(
+            Deck(
+                id = "swt",
+                name = "Softwarewerkzeuge",
+                subtopics = listOf(Subtopic(id = "swt-1", name = "Alles", cards = cards.toList())),
+            ),
         )
 
     private fun at(
@@ -56,7 +59,7 @@ class ProgressTest {
 
     @Test
     fun `a card keeps its name across the file`() {
-        val written = Progress.json(Progress.of(deck(Card(task = syntax, history = listOf(at(1_700_000_000_000))))))
+        val written = Progress.json(Progress.of(decks(Card(task = syntax, history = listOf(at(1_700_000_000_000))))))
 
         assertEquals(syntax.cardId, Progress.read(written).single().id)
     }
@@ -73,14 +76,14 @@ class ProgressTest {
                 rolled = mapOf("A" to "R", "z" to "7"),
             )
 
-        val back = Progress.read(Progress.json(Progress.of(deck(Card(task = syntax, history = listOf(attempt))))))
+        val back = Progress.read(Progress.json(Progress.of(decks(Card(task = syntax, history = listOf(attempt))))))
 
         assertEquals(listOf(attempt), back.single().attempts)
     }
 
     @Test
     fun `the target of a timed card travels with it`() {
-        val back = Progress.read(Progress.json(Progress.of(deck(Card(task = timed)))))
+        val back = Progress.read(Progress.json(Progress.of(decks(Card(task = timed)))))
 
         assertEquals(180, back.single().target)
         assertEquals("zeit", back.single().type)
@@ -122,7 +125,7 @@ class ProgressTest {
 
     @Test
     fun `reading progress in works out the box again rather than trusting a sent one`() {
-        val here = deck(Card(task = syntax, box = 7, history = listOf(at(100))))
+        val here = decks(Card(task = syntax, box = 7, history = listOf(at(100))))
         val there = listOf(CardProgress(syntax.cardId, null, "syntax", "x", attempts = listOf(at(200), at(300))))
 
         val card = Progress.applyTo(here, there).single().cards.single()
@@ -135,7 +138,7 @@ class ProgressTest {
 
     @Test
     fun `a wrong answer halves the box on the way back in, exactly as it would live`() {
-        val here = deck(Card(task = syntax))
+        val here = decks(Card(task = syntax))
         val there =
             listOf(
                 CardProgress(
@@ -152,7 +155,7 @@ class ProgressTest {
 
     @Test
     fun `the seconds are added up again from the attempts`() {
-        val here = deck(Card(task = timed))
+        val here = decks(Card(task = timed))
         val there =
             listOf(
                 CardProgress(timed.cardId, null, "zeit", "x", 180, listOf(at(1, seconds = 200), at(2, seconds = 90))),
@@ -163,7 +166,7 @@ class ProgressTest {
 
     @Test
     fun `progress for a card this machine does not have leaves its cards alone`() {
-        val here = deck(Card(task = syntax, box = 4))
+        val here = decks(Card(task = syntax, box = 4))
         val stranger = listOf(CardProgress("0000", null, "syntax", "x", attempts = listOf(at(1))))
 
         assertEquals(4, Progress.applyTo(here, stranger).single().cards.single().box)
@@ -183,7 +186,7 @@ class ProgressTest {
         // and every column after it would be wrong without anything looking broken
         val card = StudyCard(CardKind.Syntax, "Was tut `d = [3;6;2];`?", "Spaltenvektor", topic = "MATLAB / Syntax")
 
-        val rows = Progress.csv(Progress.of(deck(Card(task = card)))).lines()
+        val rows = Progress.csv(Progress.of(decks(Card(task = card)))).lines()
 
         assertEquals(13, rows[0].split(";").size)
         assertTrue(rows[1], rows[1].contains("\"Was tut `d = [3;6;2];`?\""))
@@ -229,7 +232,7 @@ class ProgressTest {
                 topic = "C",
             )
 
-        val row = Progress.csv(Progress.of(deck(Card(task = quoted)))).lines()[1]
+        val row = Progress.csv(Progress.of(decks(Card(task = quoted)))).lines()[1]
 
         assertTrue(row, row.contains("\"Was gibt printf(\"\"%d; %d\"\", a, b) aus?\""))
     }
@@ -243,7 +246,7 @@ class ProgressTest {
                 task = StudyCard(CardKind.Logik, "Ungefragt", "back", topic = "C / Zeit"),
             )
 
-        val rows = Progress.csv(Progress.of(deck(open, done, fresh))).lines()
+        val rows = Progress.csv(Progress.of(decks(open, done, fresh))).lines()
 
         // sorted by part first, so MATLAB's one open card comes after C's two
         assertEquals("C / Zeit", rows[1].split(";")[0])
@@ -260,7 +263,7 @@ class ProgressTest {
                 history = listOf(at(1), at(2, Rating.Syntax), at(3, Rating.Logic), at(4, Rating.Syntax)),
             )
 
-        val cells = Progress.csv(Progress.of(deck(card))).lines()[1].split(";")
+        val cells = Progress.csv(Progress.of(decks(card))).lines()[1].split(";")
 
         assertEquals("4", cells[3])
         assertEquals("1", cells[4])
