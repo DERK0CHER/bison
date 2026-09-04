@@ -33,13 +33,52 @@ data class Card(
     val lapses: Int = 0,
     /** Seconds spent on this card, all sessions together */
     val seconds: Long = 0,
+    /**
+     * Every answer ever given to this card, oldest first.
+     *
+     * Kept whole rather than summarised: the counts can be worked out from it at any time, and
+     * nothing can be worked out from the counts. It is what the export writes and what a
+     * re-import puts back.
+     */
+    val history: List<Attempt> = emptyList(),
 ) {
+    /** The times this card was answered, newest first, for the ones that are timed */
+    val times: List<Long> get() = history.map { it.seconds }.reversed()
+
+    /** The quickest it has ever been done */
+    val best: Long? get() = history.filter { it.seconds > 0 }.minOfOrNull { it.seconds }
+
+    /** How it went last */
+    val last: Attempt? get() = history.lastOrNull()
+
+    /**
+     * Where this card stands, in the words the export uses.
+     *
+     * One right answer is not "ok": the brief asks for two in a row, and a card answered
+     * correctly once is as likely to have been guessed as known. That leaves a gap in the
+     * wording - answered once, correctly, is neither "last attempt wrong" nor "twice in a row" -
+     * and it is filed as still open, because the point of the status is to say what is left to
+     * revise.
+     */
+    val status: String
+        get() {
+            val wrong = history.count { !it.rating.correct }
+            val lastTwo = history.takeLast(2)
+            return when {
+                history.isEmpty() -> "neu"
+                wrong >= LEECH_LAPSES -> "leech"
+                lastTwo.size == 2 && lastTwo.all { it.rating.correct } -> "ok"
+                else -> "offen"
+            }
+        }
+
     /** How this card should be asked now */
     val mode: CardMode
         get() =
             when {
                 task is StudyCard ->
                     when {
+                        task.kind == CardKind.Zeit -> CardMode.Timed
                         task.kind == CardKind.Sc -> CardMode.Pick
                         task.isTyped -> CardMode.Answer
                         else -> CardMode.Flip
@@ -119,6 +158,9 @@ enum class CardMode {
 
     /** Three options, a, b and c */
     Pick,
+
+    /** Solved on paper against a clock */
+    Timed,
 }
 
 /**

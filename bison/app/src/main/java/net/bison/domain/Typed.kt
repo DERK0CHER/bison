@@ -25,8 +25,32 @@ object Typed {
         theirs: String,
     ): Boolean = squeeze(mine) == squeeze(theirs)
 
-    /** The answer with every run of whitespace reduced to a single space, and the ends trimmed */
-    fun squeeze(text: String): String = text.trim().replace(WHITESPACE, " ")
+    /**
+     * The answer with the layout taken out of it.
+     *
+     * Runs of whitespace become one space, and the quotes a phone keyboard substitutes are put
+     * back: typing `'` on Android often produces `’`, and a MATLAB transpose written with a
+     * typographic apostrophe would otherwise be marked wrong for a character the reader never
+     * chose. The same for the double quote a C string is written with.
+     */
+    fun squeeze(text: String): String =
+        text
+            .trim()
+            .replace(WHITESPACE, " ")
+            .map { CURLY[it] ?: it }
+            .joinToString("")
 
     private val WHITESPACE = Regex("""\s+""")
+
+    /** What a keyboard turns a quote into, and what it was meant to be */
+    private val CURLY =
+        mapOf(
+            '’' to '\'',
+            '‘' to '\'',
+            '´' to '\'',
+            '`' to '\'',
+            '“' to '"',
+            '”' to '"',
+            '„' to '"',
+        )
 }

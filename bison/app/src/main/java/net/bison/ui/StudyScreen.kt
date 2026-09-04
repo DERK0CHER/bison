@@ -55,11 +55,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import net.bison.audio.Feedback
 import net.bison.domain.StudySession
+import net.bison.model.Attempt
 import net.bison.model.Card
 import net.bison.model.CardMode
 import net.bison.model.CodeTask
 import net.bison.model.GeneratedTask
 import net.bison.model.Question
+import net.bison.model.Rating
 import net.bison.model.SketchTask
 import net.bison.model.StudyCard
 import net.bison.ui.theme.BisonColors
@@ -159,13 +161,34 @@ fun StudyScreen(
     // by this.
     val shownAt = remember(round) { System.currentTimeMillis() }
 
-    /** Records an answer from whichever mode produced it and moves on */
-    fun record(correct: Boolean) {
-        session.answer(correct = correct, seconds = (System.currentTimeMillis() - shownAt) / 1000)
+    /**
+     * Writes one answer down and moves on.
+     *
+     * The attempt is kept whole - what it was graded, what was typed, which numbers the card
+     * came up with - and it is persisted here, on the spot. A session that only wrote its
+     * history back on the way out would lose an evening to a locked screen.
+     */
+    fun recordGiven(given: Given) {
+        val seconds = (System.currentTimeMillis() - shownAt) / 1000
+        session.answer(
+            correct = given.rating.correct,
+            seconds = seconds,
+            attempt =
+                Attempt(
+                    at = System.currentTimeMillis(),
+                    rating = given.rating,
+                    seconds = seconds,
+                    typed = given.typed,
+                    rolled = given.rolled,
+                ),
+        )
         picked = null
         round++
         onProgress(session.snapshot())
     }
+
+    /** For the modes that only know right from wrong */
+    fun record(correct: Boolean) = recordGiven(Given(if (correct) Rating.Right else Rating.Wrong))
 
     fun advance() {
         val position = picked ?: return
@@ -252,14 +275,26 @@ fun StudyScreen(
                         },
                     )
 
+                shown.mode == CardMode.Timed ->
+                    TimedRound(
+                        card = shown.task as StudyCard,
+                        round = target.line,
+                        history = shown.times,
+                        best = shown.best,
+                        onSubmit = { given ->
+                            if (soundOn) feedback.play(correct = given.rating.correct)
+                            recordGiven(given)
+                        },
+                    )
+
                 shown.mode == CardMode.Flip ->
                     FlipRound(
                         card = shown.task as StudyCard,
                         round = target.line,
                         reversed = reversed,
-                        onSubmit = { correct ->
-                            if (soundOn) feedback.play(correct = correct)
-                            record(correct)
+                        onSubmit = { given ->
+                            if (soundOn) feedback.play(correct = given.rating.correct)
+                            recordGiven(given)
                         },
                     )
 
@@ -267,9 +302,9 @@ fun StudyScreen(
                     PickRound(
                         card = shown.task as StudyCard,
                         round = target.line,
-                        onSubmit = { correct ->
-                            if (soundOn) feedback.play(correct = correct)
-                            record(correct)
+                        onSubmit = { given ->
+                            if (soundOn) feedback.play(correct = given.rating.correct)
+                            recordGiven(given)
                         },
                     )
 
@@ -281,9 +316,9 @@ fun StudyScreen(
                         // the round's own number, so a parametrised card stands still while it
                         // is answered and asks something else when it comes back
                         seed = target.index,
-                        onSubmit = { correct ->
-                            if (soundOn) feedback.play(correct = correct)
-                            record(correct)
+                        onSubmit = { given ->
+                            if (soundOn) feedback.play(correct = given.rating.correct)
+                            recordGiven(given)
                         },
                     )
 

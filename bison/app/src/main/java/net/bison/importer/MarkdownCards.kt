@@ -107,9 +107,19 @@ object MarkdownCards {
         val kind = CardKind.of(value(TYPE).orEmpty()) ?: return null
         val front = value(FRONT) ?: return null
         val back = value(BACK) ?: return null
+
+        // The options of a single choice card, written either as three fields of their own or -
+        // as the set does - on the line under the question. Both are read; when they come out of
+        // the question they are taken out of it, so the card does not say everything twice.
+        val written = listOf(value("a"), value("b"), value("c"))
+        val options = if (written.all { it != null }) written.filterNotNull() else emptyList()
+        val fromFront = if (options.isEmpty()) optionsIn(front) else null
+
         return StudyCard(
             kind = kind,
-            prompt = front,
+            prompt = fromFront?.let { front.replace(it.line, "").trim() } ?: front,
+            options = options.ifEmpty { fromFront?.options.orEmpty() },
+            target = seconds(value(ZIEL)),
             back = back,
             logic = value(LOGIK),
             // the file separates them with " | ", and an answer may well contain a bare pipe
@@ -131,7 +141,47 @@ object MarkdownCards {
         )
     }
 
+    /** The three options and the line they were found on, so it can be taken out of the question */
+    private data class Options(
+        val line: String,
+        val options: List<String>,
+    )
+
+    /**
+     * The options a single choice card writes under its question.
+     *
+     * `a) Call by Address  b) Call by Reference  c) Call by Value` on one line, which is how the
+     * set writes them and how an exam prints them.
+     */
+    private fun optionsIn(front: String): Options? {
+        val line = front.lineSequence().firstOrNull { OPTION_LINE.containsMatchIn(it) } ?: return null
+        val found = OPTION_LINE.findAll(line).toList()
+        if (found.size < 3) return null
+        return Options(
+            line = line,
+            options =
+                found.mapIndexed { at, match ->
+                    val from = match.range.last + 1
+                    val to = found.getOrNull(at + 1)?.range?.first ?: line.length
+                    line.substring(from, to).trim()
+                },
+        )
+    }
+
+    /** `90` or `1:30`, because both get written and both mean ninety seconds */
+    private fun seconds(written: String?): Int? {
+        val text = written?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        if (':' !in text) return text.toIntOrNull()
+        val parts = text.split(':')
+        val minutes = parts.getOrNull(0)?.trim()?.toIntOrNull() ?: return null
+        val rest = parts.getOrNull(1)?.trim()?.toIntOrNull() ?: return null
+        return minutes * 60 + rest
+    }
+
     private val FIELD = Regex("""^([A-Za-z]+):(.*)$""")
+
+    /** `a)` or `a.` or `a )`, which is every way anybody writes an option marker */
+    private val OPTION_LINE = Regex("""\b([abc])\s*[).]\s""")
 
     private const val SEPARATOR = "---"
     private const val TYPE = "type"
@@ -141,7 +191,8 @@ object MarkdownCards {
     private const val ALT = "alt"
     private const val PARAMS = "params"
     private const val TAGS = "tags"
+    private const val ZIEL = "ziel"
 
     /** Only these begin a field. Anything else that looks like one is part of a value. */
-    private val FIELDS = setOf(TYPE, FRONT, LOGIK, BACK, ALT, PARAMS, TAGS)
+    private val FIELDS = setOf(TYPE, FRONT, LOGIK, BACK, ALT, PARAMS, TAGS, ZIEL, "a", "b", "c")
 }

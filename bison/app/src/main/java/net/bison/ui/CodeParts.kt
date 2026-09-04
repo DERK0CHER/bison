@@ -230,4 +230,8 @@ private val STUDY =
         Symbol("->"),
         Symbol("<"),
         Symbol(">"),
+        Symbol("-"),
+        Symbol("+"),
+        Symbol("/"),
+        Symbol("%"),
     )

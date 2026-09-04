@@ -1,5 +1,6 @@
 package net.bison.domain
 
+import net.bison.model.Attempt
 import net.bison.model.Card
 import net.bison.model.progressOf
 
@@ -120,11 +121,20 @@ class StudySession(
     fun answer(
         correct: Boolean,
         seconds: Long = 0,
+        attempt: Attempt? = null,
     ): Card? {
         val card = queue.removeFirstOrNull() ?: return null
         previous = state().copy(queue = listOf(card) + queue.toList())
         if (!correct) slipped += card.task.identity
-        val updated = card.answered(correct).copy(seconds = card.seconds + seconds.coerceIn(0, MAX_SECONDS))
+        val updated =
+            card
+                .answered(correct)
+                .copy(
+                    seconds = card.seconds + seconds.coerceIn(0, MAX_SECONDS),
+                    // written down as it happened, in full: the history is the only record of
+                    // how the studying went, and it is what the export hands back
+                    history = attempt?.let { card.history + it } ?: card.history,
+                )
         when {
             // finished for good: this is where it gets its next date, from how the whole
             // session went rather than from this one answer

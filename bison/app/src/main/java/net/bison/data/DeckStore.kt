@@ -1,6 +1,7 @@
 package net.bison.data
 
 import android.content.Context
+import net.bison.model.Attempt
 import net.bison.model.BitOp
 import net.bison.model.Card
 import net.bison.model.CardKind
@@ -9,6 +10,7 @@ import net.bison.model.Deck
 import net.bison.model.GenKind
 import net.bison.model.GeneratedTask
 import net.bison.model.Question
+import net.bison.model.Rating
 import net.bison.model.SketchTask
 import net.bison.model.StudyCard
 import net.bison.model.Subtopic
@@ -107,6 +109,7 @@ class DeckStore(
             if (card.ease != Card.EASE_START) json.put("ease", card.ease)
             if (card.lapses > 0) json.put("lapses", card.lapses)
             if (card.seconds > 0) json.put("seconds", card.seconds)
+            if (card.history.isNotEmpty()) json.put("history", encodeHistory(card.history))
             card.task.topic?.let { json.put("topic", it) }
             card.task.given?.let { json.put("given", it) }
             card.task.image?.let { json.put("image", it) }
@@ -135,6 +138,10 @@ class DeckStore(
                         .put("alt", JSONArray().also { alt -> task.alternatives.forEach(alt::put) })
                     task.logic?.let { json.put("logik", it) }
                     task.params?.let { json.put("params", it) }
+                    task.target?.let { json.put("ziel", it) }
+                    if (task.options.isNotEmpty()) {
+                        json.put("options", JSONArray().also { list -> task.options.forEach(list::put) })
+                    }
                 }
 
                 is SketchTask -> {
@@ -160,6 +167,54 @@ class DeckStore(
             array.put(json)
         }
         return array
+    }
+
+    /**
+     * Every answer ever given to a card.
+     *
+     * Written in full rather than as counts. The counts can always be worked out again from the
+     * attempts; nothing can be worked out from the counts, and this file is the only place the
+     * history exists.
+     */
+    private fun encodeHistory(history: List<Attempt>): JSONArray {
+        val array = JSONArray()
+        for (attempt in history) {
+            val json =
+                JSONObject()
+                    .put("at", attempt.at)
+                    .put("rating", attempt.rating.written)
+                    .put("seconds", attempt.seconds)
+            attempt.typed?.let { json.put("typed", it) }
+            if (attempt.rolled.isNotEmpty()) {
+                json.put("rolled", JSONObject().also { rolled -> attempt.rolled.forEach(rolled::put) })
+            }
+            array.put(json)
+        }
+        return array
+    }
+
+    private fun decodeHistory(array: JSONArray?): List<Attempt> {
+        if (array == null) return emptyList()
+        val history = mutableListOf<Attempt>()
+        for (i in 0 until array.length()) {
+            val json = array.optJSONObject(i) ?: continue
+            val at = json.optLong("at", 0).takeIf { it > 0 } ?: continue
+            val rolled = json.optJSONObject("rolled")
+            history +=
+                Attempt(
+                    at = at,
+                    rating = Rating.of(json.optString("rating")) ?: Rating.Wrong,
+                    seconds = json.optLong("seconds", 0),
+                    typed = json.optString("typed").takeIf { it.isNotEmpty() },
+                    rolled =
+                        rolled
+                            ?.keys()
+                            ?.asSequence()
+                            ?.associateWith { rolled.optString(it) }
+                            .orEmpty(),
+                )
+        }
+        return history.sortedBy { it.at }
     }
 
     private fun decode(text: String): List<Deck> {
@@ -213,6 +268,7 @@ class DeckStore(
                     ease = json.optDouble("ease", Card.EASE_START),
                     lapses = json.optInt("lapses", 0),
                     seconds = json.optLong("seconds", 0),
+                    history = decodeHistory(json.optJSONArray("history")),
                 )
         }
         return cards
@@ -253,6 +309,8 @@ class DeckStore(
                     logic = json.optString("logik").takeIf { it.isNotEmpty() },
                     alternatives = decodeStrings(json.optJSONArray("alt")),
                     params = json.optString("params").takeIf { it.isNotEmpty() },
+                    options = decodeStrings(json.optJSONArray("options")),
+                    target = json.optInt("ziel", 0).takeIf { it > 0 },
                     topic = topic,
                     tags = tags,
                 )
@@ -328,7 +386,7 @@ class DeckStore(
          * which is the right answer for a set that has been sitting there since before there
          * were dates at all.
          */
-        private const val VERSION = 8
+        private const val VERSION = 9
 
         private const val CHOICE = "choice"
         private const val CODE = "code"
