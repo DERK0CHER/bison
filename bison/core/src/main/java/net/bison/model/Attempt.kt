@@ -54,3 +54,38 @@ data class Attempt(
     val typed: String? = null,
     val rolled: Map<String, String> = emptyMap(),
 )
+
+/**
+ * Where a card stands, in the words the export uses.
+ *
+ * One right answer is not "ok": the brief asks for two in a row, and a card answered correctly
+ * once is as likely to have been guessed as known. That leaves a gap in the wording - answered
+ * once, correctly, is neither "last attempt wrong" nor "twice in a row" - and it is filed as
+ * still open, because the point of the status is to say what is left to revise.
+ *
+ * It lives beside the attempts rather than on the card, because the export works out the same
+ * answer from the same list without ever building a card, and two copies of this rule would be
+ * two rules the first time one of them was edited.
+ */
+fun statusOf(history: List<Attempt>): String {
+    val wrong = history.count { !it.rating.correct }
+    val lastTwo = history.takeLast(2)
+    return when {
+        history.isEmpty() -> NEW
+        wrong >= Card.LEECH_LAPSES -> LEECH
+        lastTwo.size == 2 && lastTwo.all { it.rating.correct } -> DONE
+        else -> OPEN
+    }
+}
+
+/** Never answered */
+const val NEW = "neu"
+
+/** Answered wrongly often enough that the card itself is probably the problem */
+const val LEECH = "leech"
+
+/** Twice right in a row */
+const val DONE = "ok"
+
+/** Started and not yet safe */
+const val OPEN = "offen"

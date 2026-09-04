@@ -42,6 +42,32 @@ sealed interface Task {
      */
     val identity: String get() = prompt + "\n" + given.orEmpty() + "\n" + image.orEmpty()
 
+    /**
+     * What the card is filed under, so its history survives the set being imported again.
+     *
+     * A card is the same card when it asks the same thing in the same part of the set. Nothing
+     * else could serve: the file has no ids in it, the order changes as the set is edited, and
+     * the answer is the very thing that gets corrected - filing on the answer would throw the
+     * history away the moment a typo in it was fixed. Rewording a question therefore starts its
+     * history over, which is the stated trade.
+     *
+     * The front is taken as it is written, with the placeholders still in it, so a parametrised
+     * card keeps one history rather than one per roll.
+     */
+    val filedAs: String get() = prompt
+
+    /**
+     * The card's own name: the same forty characters on every device and every import.
+     *
+     * This is what the export writes, what a re-import matches on, and what two machines agree
+     * about when they sync - so it has to follow from the card alone, and never be handed out
+     * by whichever of them happened to see the card first.
+     */
+    val cardId: String get() = sha1(topic.orEmpty() + "\n" + filedAs)
+
+    /** The kind of card this is, in the word the file and the export use for it */
+    val type: String
+
     /** One line naming the card, for a list or a preview */
     val label: String
         get() =
@@ -49,6 +75,19 @@ sealed interface Task {
                 .ifEmpty { firstLine(given.orEmpty()) }
                 .ifEmpty { image.orEmpty() }
 }
+
+/**
+ * A name, not a secret.
+ *
+ * SHA-1 is chosen for exactly that: what is wanted is that the same question in the same part of
+ * the set comes out as the same forty characters wherever it is read, on the phone and at the
+ * desk, this term and next.
+ */
+fun sha1(text: String): String =
+    java.security.MessageDigest
+        .getInstance("SHA-1")
+        .digest(text.toByteArray())
+        .joinToString("") { "%02x".format(it) }
 
 /** The first line with anything on it, trimmed; empty when there is none */
 private fun firstLine(text: String): String = text.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
@@ -82,6 +121,8 @@ data class Question(
     override val topic: String? = null,
     override val tags: List<String> = emptyList(),
 ) : Task {
+    override val type: String get() = "sc"
+
     val correctAnswer: String get() = answers[correctIndex]
 }
 
@@ -107,8 +148,14 @@ data class SketchTask(
     override val topic: String? = null,
     override val tags: List<String> = emptyList(),
 ) : Task {
+    override val type: String get() = "sketch"
+
     override val identity: String
         get() = prompt + "\n" + given.orEmpty() + "\n" + image.orEmpty() + "\n" + answerImage.orEmpty()
+
+    // the answer is left out, as everywhere: a card whose answer picture is replaced by a better
+    // one is the same card, and should keep what it knows about itself
+    override val filedAs: String get() = prompt + "\n" + given.orEmpty() + "\n" + image.orEmpty()
 
     /** Whether there is anything to show when the answer is asked for */
     val hasAnswer: Boolean get() = answerImage != null || !answer.isNullOrBlank()
@@ -134,6 +181,13 @@ data class CodeTask(
     override val topic: String? = null,
     override val tags: List<String> = emptyList(),
 ) : Task {
+    override val type: String get() = "code"
+
+    // the answer is deliberately not in here, although it is in the identity: a model answer
+    // that gets a typo fixed is the same exercise, and its history should survive the fix
+    override val filedAs: String get() = prompt + "
+" + given.orEmpty()
+
     /** The model answer as lines, with blank lines at either end dropped */
     val solutionLines: List<String> get() = lines(solution)
 

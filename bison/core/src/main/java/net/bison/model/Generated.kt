@@ -78,11 +78,18 @@ data class GeneratedTask(
     override val topic: String? = null,
     override val tags: List<String> = emptyList(),
 ) : Task {
+    override val type: String get() = "gen"
+
     override val prompt: String get() = title ?: described
 
     // the exercise is what tells two of these apart; the numbers are different every time and
     // would make an identity that never matches itself
     override val identity: String get() = "gen:$kind:$from:$to:$bits:$op:$format"
+
+    // filed under the exercise for the same reason: the wording it writes for itself mentions
+    // nothing that changes, but a card given a title of its own would otherwise be refiled the
+    // moment that title was reworded
+    override val filedAs: String get() = identity
 
     /** The wording the card writes for itself when it was not given one */
     private val described: String

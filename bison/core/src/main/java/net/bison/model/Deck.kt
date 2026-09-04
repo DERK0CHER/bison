@@ -51,26 +51,8 @@ data class Card(
     /** How it went last */
     val last: Attempt? get() = history.lastOrNull()
 
-    /**
-     * Where this card stands, in the words the export uses.
-     *
-     * One right answer is not "ok": the brief asks for two in a row, and a card answered
-     * correctly once is as likely to have been guessed as known. That leaves a gap in the
-     * wording - answered once, correctly, is neither "last attempt wrong" nor "twice in a row" -
-     * and it is filed as still open, because the point of the status is to say what is left to
-     * revise.
-     */
-    val status: String
-        get() {
-            val wrong = history.count { !it.rating.correct }
-            val lastTwo = history.takeLast(2)
-            return when {
-                history.isEmpty() -> "neu"
-                wrong >= LEECH_LAPSES -> "leech"
-                lastTwo.size == 2 && lastTwo.all { it.rating.correct } -> "ok"
-                else -> "offen"
-            }
-        }
+    /** Where this card stands, in the words the export uses */
+    val status: String get() = statusOf(history)
 
     /** How this card should be asked now */
     val mode: CardMode

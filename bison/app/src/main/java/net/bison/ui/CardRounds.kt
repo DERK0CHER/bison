@@ -82,21 +82,24 @@ fun FlipRound(
     reversed: Boolean = false,
 ) {
     var turned by remember(card, reversed) { mutableStateOf(0) }
+    // read out once rather than reached for three times: the card is declared in another module
+    // now, and the compiler will not carry a null check across a property it cannot see into
+    val logic = card.logic
     // turned round, the reasoning is the question and there is only the answer left to show
-    val backwards = reversed && card.logic != null
-    val stages = if (card.logic == null || backwards) 1 else 2
+    val backwards = reversed && logic != null
+    val stages = if (logic == null || backwards) 1 else 2
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Spacer(Modifier.height(6.dp))
         Caption(text = if (backwards) "$round · umgekehrt" else round)
         Spacer(Modifier.height(14.dp))
-        Prompt(text = if (backwards) card.logic.orEmpty() else card.prompt)
+        Prompt(text = if (backwards) logic.orEmpty() else card.prompt)
 
-        if (turned >= 1 && card.logic != null && !backwards) {
+        if (turned >= 1 && logic != null && !backwards) {
             Spacer(Modifier.height(20.dp))
             Caption(text = "LOGIK")
             Spacer(Modifier.height(8.dp))
-            Answer(text = card.logic, tint = BisonColors.Almost)
+            Answer(text = logic, tint = BisonColors.Almost)
         }
         if (turned >= stages) {
             Spacer(Modifier.height(20.dp))

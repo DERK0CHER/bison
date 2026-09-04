@@ -68,18 +68,8 @@ data class StudyCard(
     /** Whether the answer is typed out and compared, rather than turned over or picked */
     val isTyped: Boolean get() = kind == CardKind.Syntax || kind == CardKind.Param || kind == CardKind.Trace
 
-    /**
-     * What this card is filed under, so its history survives the set being imported again.
-     *
-     * A card is the same card when it asks the same thing in the same part of the set. Nothing
-     * else could serve: the file has no ids in it, the order changes as the set is edited, and
-     * the answer is the very thing that gets corrected. Rewording a question therefore starts
-     * its history over, which was the stated trade.
-     *
-     * The front is taken as it is written, with the placeholders still in it, so a parametrised
-     * card keeps one history rather than one per roll.
-     */
-    val cardId: String get() = sha1(topic.orEmpty() + "\n" + prompt)
+    /** The word the file used for this card, which is the word the export writes back */
+    override val type: String get() = kind.name.lowercase()
 
     /** Everything that counts as the answer, the main one first */
     val accepted: List<String> get() = listOf(back) + alternatives
@@ -90,17 +80,5 @@ data class StudyCard(
     companion object {
         /** What a single choice card offers, in the order the file writes them */
         val OPTIONS = listOf('a', 'b', 'c')
-
-        /**
-         * A card's own name for itself.
-         *
-         * SHA-1 because it is a name, not a secret: what is wanted is that the same question in
-         * the same part comes out as the same forty characters on every device and every import.
-         */
-        fun sha1(text: String): String =
-            java.security.MessageDigest
-                .getInstance("SHA-1")
-                .digest(text.toByteArray())
-                .joinToString("") { "%02x".format(it) }
     }
 }
