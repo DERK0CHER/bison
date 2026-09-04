@@ -402,11 +402,11 @@ private fun quote(text: String?): String {
     for (c in text) {
         when {
             c == '"' -> out.append("\\\"")
-            c == '\' -> out.append("\\\\")
-            c == '\n' -> out.append("\n")
-            c == '\r' -> out.append("\r")
-            c == '\t' -> out.append("\t")
-            c < ' ' -> out.append("\u%04x".format(c.code))
+            c == '\\' -> out.append("\\\\")
+            c == '\n' -> out.append("\\n")
+            c == '\r' -> out.append("\\r")
+            c == '\t' -> out.append("\\t")
+            c < ' ' -> out.append("\\u%04x".format(c.code))
             else -> out.append(c)
         }
     }

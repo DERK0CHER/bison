@@ -185,8 +185,7 @@ data class CodeTask(
 
     // the answer is deliberately not in here, although it is in the identity: a model answer
     // that gets a typo fixed is the same exercise, and its history should survive the fix
-    override val filedAs: String get() = prompt + "
-" + given.orEmpty()
+    override val filedAs: String get() = prompt + "\n" + given.orEmpty()
 
     /** The model answer as lines, with blank lines at either end dropped */
     val solutionLines: List<String> get() = lines(solution)

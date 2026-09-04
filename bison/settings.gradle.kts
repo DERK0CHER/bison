@@ -18,3 +18,4 @@ rootProject.name = "Bison"
 
 include(":app")
 include(":core")
+include(":desktop")

@@ -10,32 +10,31 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import net.bison.look.Palette
 
 /**
  * The palette: black, white, and three greys.
  *
- * Colour is spent only where it carries meaning - green for right, red for wrong. Everything
- * else is a shade, which is what lets a screen of answer boxes stay quiet.
+ * The numbers themselves live in the shared core, because the desktop build draws the same app
+ * with a different Compose artifact and the two blacks have to be the same black.
  */
 object BisonColors {
-    val Background = Color(0xFF000000)
-    val Surface = Color(0xFF101010)
-    val SurfaceRaised = Color(0xFF1A1A1A)
-    val Border = Color(0xFF232323)
+    val Background = Color(Palette.BACKGROUND)
+    val Surface = Color(Palette.SURFACE)
+    val SurfaceRaised = Color(Palette.SURFACE_RAISED)
+    val Border = Color(Palette.BORDER)
 
-    val TextPrimary = Color(0xFFFFFFFF)
+    val TextPrimary = Color(Palette.TEXT_PRIMARY)
 
-    /** Body copy: light enough to read at length against black */
-    val TextSecondary = Color(0xFFB4B4B8)
-    val TextMuted = Color(0xFF7A7A7E)
+    val TextSecondary = Color(Palette.TEXT_SECONDARY)
+    val TextMuted = Color(Palette.TEXT_MUTED)
 
-    /** The middle of the run from not-known to known */
-    val Almost = Color(0xFFFDB022)
+    val Almost = Color(Palette.ALMOST)
 
-    val Correct = Color(0xFF32D583)
-    val CorrectSurface = Color(0xFF0E1F16)
-    val Wrong = Color(0xFFF97066)
-    val WrongSurface = Color(0xFF1F1211)
+    val Correct = Color(Palette.CORRECT)
+    val CorrectSurface = Color(Palette.CORRECT_SURFACE)
+    val Wrong = Color(Palette.WRONG)
+    val WrongSurface = Color(Palette.WRONG_SURFACE)
 
     /**
      * How well something is known, as one colour on a run from red through amber to light green.
@@ -55,7 +54,7 @@ object BisonColors {
     }
 
     /** The light green the run ends on */
-    val LearnedGreen = Color(0xFF7BE495)
+    val LearnedGreen = Color(Palette.LEARNED_GREEN)
 }
 
 /** Radii and spacing, in one place so every surface agrees */
