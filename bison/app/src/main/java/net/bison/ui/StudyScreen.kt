@@ -117,6 +117,8 @@ fun StudyScreen(
                             prompt = question.prompt,
                             given = question.given,
                             image = question.image,
+                            logic = question.logic,
+                            reason = question.reason,
                             answers = order.map { question.answers[it] },
                             correctPosition = order.indexOf(question.correctIndex),
                         )
@@ -298,16 +300,6 @@ fun StudyScreen(
                         },
                     )
 
-                shown.mode == CardMode.Pick ->
-                    PickRound(
-                        card = shown.task as StudyCard,
-                        round = target.line,
-                        onSubmit = { given ->
-                            if (soundOn) feedback.play(correct = given.rating.correct)
-                            recordGiven(given)
-                        },
-                    )
-
                 shown.mode == CardMode.Answer ->
                     AnswerRound(
                         card = shown.task as StudyCard,
@@ -394,6 +386,8 @@ private data class RoundView(
     val prompt: String,
     val given: String?,
     val image: String?,
+    val logic: String?,
+    val reason: String?,
     val answers: List<String>,
     val correctPosition: Int,
 )
@@ -469,6 +463,30 @@ private fun Round(
                         onClick = { onPick(position) },
                     )
                     Spacer(Modifier.height(BisonShape.Gap))
+                }
+
+                // Once a box has been picked, why. Knowing that the second one was right
+                // teaches nothing about the next question; the pattern behind it does, and it
+                // can only be shown afterwards without giving the answer away.
+                if (picked != null) {
+                    view.reason?.let {
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = BisonColors.TextSecondary,
+                        )
+                    }
+                    view.logic?.let {
+                        Spacer(Modifier.height(12.dp))
+                        Caption(text = "LOGIK")
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = BisonColors.TextMuted,
+                        )
+                    }
                 }
             }
         }

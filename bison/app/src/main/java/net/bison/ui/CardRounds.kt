@@ -28,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -114,67 +116,6 @@ fun FlipRound(
             BisonButton(text = "Gewusst", onClick = { onSubmit(Given(Rating.Right)) })
             Spacer(Modifier.height(10.dp))
             BisonButton(text = "Nicht gewusst", onClick = { onSubmit(Given(Rating.Logic)) }, filled = false)
-        }
-        Spacer(Modifier.height(20.dp))
-    }
-}
-
-/**
- * Three options, in the order the exam prints them.
- *
- * Never shuffled. The answer names a letter - `b. Call by Reference` - so moving the options
- * would make the card contradict its own answer, and the paper does not move them either.
- *
- * The options carry their text where the set gives it, whether as three fields or as the line
- * under the question; a card that only ever wrote them into the question still gets three
- * buttons, with the letters on them.
- */
-@Composable
-fun PickRound(
-    card: StudyCard,
-    round: String,
-    onSubmit: (given: Given) -> Unit,
-) {
-    var picked by remember(card) { mutableStateOf<Char?>(null) }
-    val right = card.correctOption
-
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Spacer(Modifier.height(6.dp))
-        Caption(text = round)
-        Spacer(Modifier.height(14.dp))
-        Prompt(text = card.prompt)
-        Spacer(Modifier.height(22.dp))
-
-        for ((at, option) in StudyCard.OPTIONS.withIndex()) {
-            val chosen = picked
-            OptionButton(
-                letter = option,
-                text = card.options.getOrNull(at),
-                state =
-                    when {
-                        chosen == null -> OptionState.Open
-                        option == right -> OptionState.Right
-                        option == chosen -> OptionState.Wrong
-                        else -> OptionState.Quiet
-                    },
-                onClick = { if (picked == null) picked = option },
-            )
-            Spacer(Modifier.height(10.dp))
-        }
-
-        picked?.let { chosen ->
-            Spacer(Modifier.height(12.dp))
-            Caption(text = "LÖSUNG")
-            Spacer(Modifier.height(8.dp))
-            Answer(text = card.back, tint = BisonColors.TextPrimary)
-            card.logic?.let {
-                Spacer(Modifier.height(14.dp))
-                Caption(text = "LOGIK")
-                Spacer(Modifier.height(8.dp))
-                Answer(text = it, tint = BisonColors.TextSecondary)
-            }
-            Spacer(Modifier.height(20.dp))
-            BisonButton(text = "Weiter", onClick = { onSubmit(Given(if (chosen == right) Rating.Right else Rating.Wrong)) })
         }
         Spacer(Modifier.height(20.dp))
     }
@@ -373,6 +314,12 @@ private fun Field(
     outline: Color,
     onValueChange: (TextFieldValue) -> Unit,
 ) {
+    // The keyboard is up before the card is: on a typing card there is nothing else to do, and
+    // making the reader tap the field first is a tap per card for no reason at all. It is asked
+    // for once, when the field appears, so it does not fight a reader who has put it away.
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -395,42 +342,11 @@ private fun Field(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 92.dp)
+                .focusRequester(focus)
                 .clip(RoundedCornerShape(BisonShape.Radius))
                 .background(BisonColors.Surface)
                 .border(BorderStroke(1.dp, outline), RoundedCornerShape(BisonShape.Radius))
                 .padding(horizontal = 16.dp, vertical = 16.dp),
-    )
-}
-
-private enum class OptionState { Open, Right, Wrong, Quiet }
-
-/** One option, which stays quiet until it has been picked */
-@Composable
-private fun OptionButton(
-    letter: Char,
-    text: String?,
-    state: OptionState,
-    onClick: () -> Unit,
-) {
-    val tint =
-        when (state) {
-            OptionState.Open -> BisonColors.TextPrimary
-            OptionState.Right -> BisonColors.Correct
-            OptionState.Wrong -> BisonColors.Wrong
-            OptionState.Quiet -> BisonColors.TextMuted
-        }
-    Text(
-        text = if (text.isNullOrBlank()) letter.toString() else "$letter)  $text",
-        style = MaterialTheme.typography.bodyLarge,
-        color = tint,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(BisonShape.Radius))
-                .background(BisonColors.Surface)
-                .border(BorderStroke(1.dp, if (state == OptionState.Open) BisonColors.Border else tint), RoundedCornerShape(BisonShape.Radius))
-                .clickable(onClick = onClick)
-                .padding(horizontal = 22.dp, vertical = 18.dp),
     )
 }
 

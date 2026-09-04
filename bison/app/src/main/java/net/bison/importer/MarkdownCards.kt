@@ -1,7 +1,9 @@
 package net.bison.importer
 
 import net.bison.model.CardKind
+import net.bison.model.Question
 import net.bison.model.StudyCard
+import net.bison.model.Task
 
 /**
  * Reads the written card set: one Markdown file, one card per block.
@@ -35,7 +37,7 @@ import net.bison.model.StudyCard
  */
 object MarkdownCards {
     data class Found(
-        val cards: List<StudyCard>,
+        val cards: List<Task>,
         val skipped: Int,
         val name: String?,
     )
@@ -44,7 +46,7 @@ object MarkdownCards {
         val lines = text.replace("\r\n", "\n").split("\n")
         var name: String? = null
         var subsection: String? = null
-        val cards = mutableListOf<StudyCard>()
+        val cards = mutableListOf<Task>()
         var skipped = 0
         var block = mutableListOf<String>()
 
@@ -85,7 +87,7 @@ object MarkdownCards {
     private fun readCard(
         lines: List<String>,
         subsection: String?,
-    ): StudyCard? {
+    ): Task? {
         val fields = LinkedHashMap<String, StringBuilder>()
         var current: StringBuilder? = null
 
@@ -107,18 +109,21 @@ object MarkdownCards {
         val kind = CardKind.of(value(TYPE).orEmpty()) ?: return null
         val front = value(FRONT) ?: return null
         val back = value(BACK) ?: return null
+        val tags =
+            value(TAGS)
+                .orEmpty()
+                .split(',')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
 
-        // The options of a single choice card, written either as three fields of their own or -
-        // as the set does - on the line under the question. Both are read; when they come out of
-        // the question they are taken out of it, so the card does not say everything twice.
-        val written = listOf(value("a"), value("b"), value("c"))
-        val options = if (written.all { it != null }) written.filterNotNull() else emptyList()
-        val fromFront = if (options.isEmpty()) optionsIn(front) else null
+        // A single choice card becomes an ordinary question: this app had a good one before the
+        // set arrived, and the job of an importer is to speak the model's language rather than
+        // to have the screens learn the file's.
+        if (kind == CardKind.Sc) return question(front, back, value(LOGIK), fields, subsection, tags)
 
         return StudyCard(
             kind = kind,
-            prompt = fromFront?.let { front.replace(it.line, "").trim() } ?: front,
-            options = options.ifEmpty { fromFront?.options.orEmpty() },
+            prompt = front,
             target = seconds(value(ZIEL)),
             back = back,
             logic = value(LOGIK),
@@ -132,12 +137,49 @@ object MarkdownCards {
                     .filter { it.isNotEmpty() },
             params = value(PARAMS),
             topic = subsection,
-            tags =
-                value(TAGS)
-                    .orEmpty()
-                    .split(',')
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() },
+            tags = tags,
+        )
+    }
+
+    /**
+     * A single choice card, turned into the question the app already knows.
+     *
+     * The three options come either as fields `a`, `b`, `c` or - as the set writes them - on the
+     * line under the question, which is then taken out of the question so it is not said twice.
+     * The answer names its letter first (`b. Call by Reference; …`), so the letter picks the
+     * right option and the rest of the line is the reasoning.
+     *
+     * The options keep the order they were written in. The screen shuffles them itself, every
+     * time it shows them, which is why it shows no letters.
+     */
+    private fun question(
+        front: String,
+        back: String,
+        logic: String?,
+        fields: Map<String, StringBuilder>,
+        subsection: String?,
+        tags: List<String>,
+    ): Question? {
+        fun value(key: String) = fields[key]?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+
+        val written = StudyCard.OPTIONS.map { value(it.toString()) }
+        val inFront = if (written.any { it == null }) optionsIn(front) else null
+        val options = written.filterNotNull().takeIf { it.size == StudyCard.OPTIONS.size } ?: inFront?.options
+        if (options == null || options.size < 2) return null
+
+        val letter = back.trimStart().firstOrNull()?.lowercaseChar() ?: return null
+        val correct = StudyCard.OPTIONS.indexOf(letter)
+        if (correct !in options.indices) return null
+
+        return Question(
+            prompt = inFront?.let { front.replace(it.line, "").trim() } ?: front,
+            answers = options,
+            correctIndex = correct,
+            logic = logic,
+            // what is left of the answer once the letter and its full stop are off it
+            reason = back.trimStart().drop(1).trimStart('.', ')', ' ').trim().takeIf { it.isNotEmpty() },
+            topic = subsection,
+            tags = tags,
         )
     }
 

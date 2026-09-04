@@ -79,7 +79,6 @@ data class Card(
                 task is StudyCard ->
                     when {
                         task.kind == CardKind.Zeit -> CardMode.Timed
-                        task.kind == CardKind.Sc -> CardMode.Pick
                         task.isTyped -> CardMode.Answer
                         else -> CardMode.Flip
                     }
@@ -155,9 +154,6 @@ enum class CardMode {
 
     /** Write the answer out and have it compared */
     Answer,
-
-    /** Three options, a, b and c */
-    Pick,
 
     /** Solved on paper against a clock */
     Timed,

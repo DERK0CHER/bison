@@ -69,6 +69,16 @@ data class Question(
     val correctIndex: Int,
     override val given: String? = null,
     override val image: String? = null,
+    /**
+     * The pattern that gets to the answer, shown once one has been picked.
+     *
+     * A written set carries this on every card, and it is the half that transfers: knowing that
+     * `b` was right teaches nothing about the next question, knowing why does. It is shown after
+     * the pick rather than before it, so it never gives the answer away.
+     */
+    val logic: String? = null,
+    /** Why the right answer is the right one, as the set words it */
+    val reason: String? = null,
     override val topic: String? = null,
     override val tags: List<String> = emptyList(),
 ) : Task {

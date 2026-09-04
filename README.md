@@ -62,6 +62,13 @@ liest die Antwort aus der Zwischenablage wieder ein. Erwartet wird JSON:
 und einer `Lösung:`-Zeile wird ebenfalls gelesen, falls das Modell die Vorgabe ignoriert. Was
 nicht lesbar ist, wird übersprungen und gezählt, nicht stillschweigend verschluckt.
 
+### Kartensatz als Markdown-Datei
+
+Das Format, in dem die Kartensets geschrieben werden, steht vollständig in
+[FORMAT.md](FORMAT.md): Dateiaufbau, alle sieben Kartentypen mit Pflicht- und Kannfeldern und je
+einem Beispiel, die Vergleichsregeln beim Tippen, die komplette Ausdrucksliste für `param` und
+was der Importer bei Fehlern tut.
+
 ### Kartendatei für Code
 
 Code übersteht das Von-Hand-Schreiben in JSON nicht — jede Klammer müsste escaped und jeder

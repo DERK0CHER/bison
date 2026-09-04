@@ -60,13 +60,6 @@ data class StudyCard(
     val logic: String? = null,
     val alternatives: List<String> = emptyList(),
     val params: String? = null,
-    /**
-     * The three options of a single choice card, in the order they are written.
-     *
-     * Never shuffled: the answer names a letter - `b. Call by Reference` - so moving the options
-     * would make the card contradict itself. It is also how the exam prints them.
-     */
-    val options: List<String> = emptyList(),
     /** What this one should take, in seconds, for a card that is being timed */
     val target: Int? = null,
     override val topic: String? = null,
@@ -91,19 +84,6 @@ data class StudyCard(
     /** Everything that counts as the answer, the main one first */
     val accepted: List<String> get() = listOf(back) + alternatives
 
-    /**
-     * The letter of the right option.
-     *
-     * The file writes the answer as `b. Call by Reference; ...`, so the letter is the first
-     * character of the answer and there is nowhere else it could be kept.
-     */
-    val correctOption: Char?
-        get() =
-            back
-                .trimStart()
-                .firstOrNull()
-                ?.lowercaseChar()
-                ?.takeIf { it in OPTIONS }
 
     override val identity: String get() = "$kind\n$prompt\n$back"
 
