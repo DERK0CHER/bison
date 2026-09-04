@@ -134,7 +134,7 @@ class ParamsTest {
 
         val back = Params.fill("{A}({z},{s}) = {v};", values)
 
-        assertTrue(back.matches(Regex("""[RGHXZ]\(\d+,\d+\) = \d+;""")), back)
+        assertTrue(back, back.matches(Regex("""[RGHXZ]\(\d+,\d+\) = \d+;""")))
     }
 
     @Test
