@@ -139,9 +139,6 @@ class DeckStore(
                     task.logic?.let { json.put("logik", it) }
                     task.params?.let { json.put("params", it) }
                     task.target?.let { json.put("ziel", it) }
-                    if (task.options.isNotEmpty()) {
-                        json.put("options", JSONArray().also { list -> task.options.forEach(list::put) })
-                    }
                 }
 
                 is SketchTask -> {
@@ -309,7 +306,6 @@ class DeckStore(
                     logic = json.optString("logik").takeIf { it.isNotEmpty() },
                     alternatives = decodeStrings(json.optJSONArray("alt")),
                     params = json.optString("params").takeIf { it.isNotEmpty() },
-                    options = decodeStrings(json.optJSONArray("options")),
                     target = json.optInt("ziel", 0).takeIf { it > 0 },
                     topic = topic,
                     tags = tags,
