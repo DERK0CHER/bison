@@ -436,7 +436,7 @@ private fun Round(
                 Caption(text = line)
                 Spacer(Modifier.height(14.dp))
                 if (view.prompt.isNotBlank()) {
-                    Text(
+                    CardText(
                         text = view.prompt,
                         style = MaterialTheme.typography.displaySmall,
                         color = BisonColors.TextPrimary,
@@ -471,7 +471,7 @@ private fun Round(
                 if (picked != null) {
                     view.reason?.let {
                         Spacer(Modifier.height(10.dp))
-                        Text(
+                        CardText(
                             text = it,
                             style = MaterialTheme.typography.bodyMedium,
                             color = BisonColors.TextSecondary,
@@ -481,7 +481,7 @@ private fun Round(
                         Spacer(Modifier.height(12.dp))
                         Caption(text = "LOGIK")
                         Spacer(Modifier.height(6.dp))
-                        Text(
+                        CardText(
                             text = it,
                             style = MaterialTheme.typography.bodyMedium,
                             color = BisonColors.TextMuted,

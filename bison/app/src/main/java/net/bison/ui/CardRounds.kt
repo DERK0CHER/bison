@@ -254,7 +254,7 @@ private data class Filled(
 @Composable
 private fun Prompt(text: String) {
     val lines = text.split("\n")
-    Text(
+    CardText(
         text = lines.first(),
         style = MaterialTheme.typography.titleLarge,
         color = BisonColors.TextPrimary,
@@ -267,17 +267,13 @@ private fun Prompt(text: String) {
     }
 }
 
-/** An answer or a piece of reasoning: prose, so set as prose */
+/** An answer or a piece of reasoning: prose, with whatever code stands inside it set as code */
 @Composable
 private fun Answer(
     text: String,
     tint: Color,
 ) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyLarge,
-        color = tint,
-    )
+    CardText(text = text, style = MaterialTheme.typography.bodyLarge, color = tint)
 }
 
 /** An answer that is code, which is what a syntax card's is */
