@@ -172,7 +172,13 @@ object MarkdownCards {
         if (correct !in options.indices) return null
 
         return Question(
-            prompt = inFront?.let { front.replace(it.line, "").trim() } ?: front,
+            // the option lines come out of the question, so nothing is said twice
+            prompt =
+                inFront
+                    ?.let { found -> front.lines().filterNot { it in found.lines } }
+                    ?.joinToString(NEWLINE)
+                    ?.trim()
+                    ?: front,
             answers = options,
             correctIndex = correct,
             logic = logic,
@@ -183,29 +189,54 @@ object MarkdownCards {
         )
     }
 
-    /** The three options and the line they were found on, so it can be taken out of the question */
+    /** The three options and the lines they were found on, so those can be taken out of the question */
     private data class Options(
-        val line: String,
+        val lines: List<String>,
         val options: List<String>,
     )
 
     /**
      * The options a single choice card writes under its question.
      *
-     * `a) Call by Address  b) Call by Reference  c) Call by Value` on one line, which is how the
-     * set writes them and how an exam prints them.
+     * Two layouts, and the set uses both. Twenty-one cards put all three on one line, the way an
+     * exam prints them:
+     *
+     * ```
+     * a) Call by Address  b) Call by Reference  c) Call by Value
+     * ```
+     *
+     * and thirteen give each one a line of its own, because the options are sentences:
+     *
+     * ```
+     * a) Zeigt p auf x, kann p überall stehen, wo x gebraucht wird
+     * b) Zeigt p auf x, kann *p überall stehen, wo &x gebraucht wird
+     * ```
+     *
+     * Reading only the first would have thrown away those thirteen cards without a word, which
+     * is the one thing an importer must never do.
      */
     private fun optionsIn(front: String): Options? {
-        val line = front.lineSequence().firstOrNull { OPTION_LINE.containsMatchIn(it) } ?: return null
-        val found = OPTION_LINE.findAll(line).toList()
-        if (found.size < 3) return null
+        val lines = front.lines()
+
+        // one line each, which is what a long option gets
+        val own = lines.filter { OPTION_START.containsMatchIn(it) }
+        if (own.size >= 3) {
+            return Options(
+                lines = own,
+                options = own.map { OPTION_START.replaceFirst(it, "").trim() },
+            )
+        }
+
+        // or all three on one line
+        val together = lines.firstOrNull { OPTION_LINE.findAll(it).count() >= 3 } ?: return null
+        val found = OPTION_LINE.findAll(together).toList()
         return Options(
-            line = line,
+            lines = listOf(together),
             options =
                 found.mapIndexed { at, match ->
                     val from = match.range.last + 1
-                    val to = found.getOrNull(at + 1)?.range?.first ?: line.length
-                    line.substring(from, to).trim()
+                    val to = found.getOrNull(at + 1)?.range?.first ?: together.length
+                    together.substring(from, to).trim()
                 },
         )
     }
@@ -222,10 +253,14 @@ object MarkdownCards {
 
     private val FIELD = Regex("""^([A-Za-z]+):(.*)$""")
 
-    /** `a)` or `a.` or `a )`, which is every way anybody writes an option marker */
+    /** `a)` or `a.`, anywhere on a line: three of these on one line is the compact layout */
     private val OPTION_LINE = Regex("""\b([abc])\s*[).]\s""")
 
+    /** The same marker at the start of a line, which is the one-option-per-line layout */
+    private val OPTION_START = Regex("""^\s*[abc]\s*[).]\s""")
+
     private const val SEPARATOR = "---"
+    private const val NEWLINE = "\n"
     private const val TYPE = "type"
     private const val FRONT = "front"
     private const val LOGIK = "logik"
