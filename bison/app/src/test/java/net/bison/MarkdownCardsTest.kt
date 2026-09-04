@@ -2,6 +2,8 @@ package net.bison
 
 import net.bison.importer.MarkdownCards
 import net.bison.model.CardKind
+import net.bison.model.Question
+import net.bison.model.StudyCard
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -63,23 +65,26 @@ class MarkdownCardsTest {
     }
 
     @Test
-    fun `a single choice card keeps the options that stand under the question`() {
-        val card = MarkdownCards.parse(file).cards[1]
+    fun `a single choice card becomes the question this app already had`() {
+        // the screens are not taught the file's shape; the importer speaks the model's
+        val card = MarkdownCards.parse(file).cards[1] as Question
 
-        assertEquals(CardKind.Sc, card.kind)
-        assertTrue("the options line was dropped", card.prompt.contains("a) Call by Address"))
-        // and the braces of the C on it survived, which they would not if a card of any kind
-        // went through the placeholder substitution
+        assertEquals(listOf("Call by Address", "Call by Reference", "Call by Value"), card.answers)
+        assertEquals("Call by Reference", card.correctAnswer)
+        // the options line is taken out of the question, so nothing is said twice
+        assertTrue(card.prompt, !card.prompt.contains("a) Call by Address"))
+        // and the braces of the C in it survived, which they would not if any card went through
+        // the placeholder substitution
         assertTrue(card.prompt.contains("{ *v *= *v; }"))
-        assertEquals('b', card.correctOption)
+        assertTrue(card.reason.orEmpty().startsWith("Call by Reference;"))
+        assertEquals("Parameter mit Stern, Adresse wird übergeben.", card.logic)
     }
 
     @Test
-    fun `a card that turns over has no options and no letter`() {
-        val card = MarkdownCards.parse(file).cards[0]
+    fun `a card that turns over is a study card with no reasoning of its own`() {
+        val card = MarkdownCards.parse(file).cards[0] as StudyCard
 
         assertEquals(CardKind.Logik, card.kind)
-        assertNull(card.correctOption)
         assertNull(card.logic)
         assertEquals(listOf("matlab", "logik", "klammern"), card.tags)
     }
@@ -102,7 +107,7 @@ class MarkdownCardsTest {
             tags: matlab, trace
             """.trimIndent()
 
-        val card = MarkdownCards.parse(trace).cards.single()
+        val card = MarkdownCards.parse(trace).cards.single() as StudyCard
 
         assertEquals(CardKind.Trace, card.kind)
         assertTrue(card.prompt.contains("for k = 1:10"))
@@ -129,7 +134,7 @@ class MarkdownCardsTest {
             tags: matlab, param
             """.trimIndent()
 
-        val card = MarkdownCards.parse(param).cards.single()
+        val card = MarkdownCards.parse(param).cards.single() as StudyCard
 
         assertEquals(CardKind.Param, card.kind)
         assertEquals(2, card.alternatives.size)
