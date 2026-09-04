@@ -138,7 +138,7 @@ fun SubtopicScreen(
             BisonButton(text = "Alles gemischt lernen", onClick = onStudyAll)
         } else {
             BisonButton(
-                text = if (tagged.isEmpty()) "Keine Karte mit dieser Auswahl" else "${tagged.size} Karten lernen",
+                text = if (tagged.isEmpty()) "Keine Karte mit dieser Auswahl" else "${cardCount(tagged.size)} lernen",
                 enabled = tagged.isNotEmpty(),
                 onClick = { onStudyTagged(selected.toSet()) },
             )
@@ -148,7 +148,9 @@ fun SubtopicScreen(
         if (deck.leeches.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
             BisonButton(
-                text = "${deck.leeches.size} schwierige Karten",
+                // an adjective goes between the number and the noun in German, so this one
+                // cannot come out of the shared wording
+                text = if (deck.leeches.size == 1) "1 schwierige Karte" else "${deck.leeches.size} schwierige Karten",
                 onClick = onStudyLeeches,
                 filled = false,
             )

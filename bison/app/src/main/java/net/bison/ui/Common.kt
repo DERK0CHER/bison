@@ -126,6 +126,9 @@ fun countLine(
 /** "1 Frage", "12 Fragen". Trivial, and it has now been got wrong in three places. */
 fun questionCount(questions: Int): String = "$questions ${if (questions == 1) "Frage" else "Fragen"}"
 
+/** "1 Karte", "143 Karten". The same triviality, and it got shipped wrong again. */
+fun cardCount(cards: Int): String = "$cards ${if (cards == 1) "Karte" else "Karten"}"
+
 /**
  * What is worth asking today, or when it will be.
  *

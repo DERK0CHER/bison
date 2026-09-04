@@ -173,7 +173,7 @@ fun ImportScreen(
         // file put the button that finishes the job below the bottom edge.
         if (found.isNotEmpty()) {
             BisonButton(
-                text = "${found.size} Karten übernehmen",
+                text = "${cardCount(found.size)} übernehmen",
                 onClick = { onImport(name.ifBlank { defaultName(found) }, found) },
             )
             Spacer(Modifier.height(10.dp))
@@ -210,8 +210,8 @@ private fun ResultPanel(
             text =
                 when {
                     found == 0 -> "Nichts erkannt"
-                    result.skipped == 0 -> "$found Karten erkannt"
-                    else -> "$found Karten erkannt, ${result.skipped} übersprungen"
+                    result.skipped == 0 -> "${cardCount(found)} erkannt"
+                    else -> "${cardCount(found)} erkannt, ${result.skipped} übersprungen"
                 },
             style = MaterialTheme.typography.titleLarge,
             color = if (found == 0) BisonColors.Wrong else BisonColors.Correct,
