@@ -45,6 +45,11 @@ jobs:
           cache-provider: basic
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      # The core carries the card grammar and the comparison rules and is a plain JVM library,
+      # so its tests are the fast ones and are worth failing on before anything is assembled.
+      - name: Test the shared core
+        run: ./gradlew :core:test
+
       - name: Assemble
         run: ./gradlew :app:assembleDebug :app:assembleRelease
 

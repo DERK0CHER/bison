@@ -11,16 +11,10 @@ import net.bison.model.SketchTask
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
 /**
  * Tests the format cards are written in at a desk.
- *
- * Robolectric only for the dispatcher, which falls back to the JSON parser and therefore needs a
- * real org.json.
  */
-@RunWith(RobolectricTestRunner::class)
 class CardFileParserTest {
     private val nodeDelete =
         """

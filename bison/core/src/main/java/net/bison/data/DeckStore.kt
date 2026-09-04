@@ -1,6 +1,5 @@
 package net.bison.data
 
-import android.content.Context
 import net.bison.model.Attempt
 import net.bison.model.BitOp
 import net.bison.model.Card
@@ -28,15 +27,13 @@ import java.io.File
 class DeckStore(
     private val file: File,
 ) {
-    constructor(context: Context) : this(File(context.filesDir, FILE_NAME))
-
     fun load(): List<Deck> {
         if (!file.exists()) return emptyList()
         return try {
             decode(file.readText())
         } catch (e: Exception) {
             // a corrupt file must not make the app unusable: start over rather than crash
-            android.util.Log.w(TAG, "could not read decks, starting empty", e)
+            warn("could not read decks, starting empty", e)
             emptyList()
         }
     }
@@ -45,7 +42,7 @@ class DeckStore(
         try {
             file.writeText(encode(decks))
         } catch (e: Exception) {
-            android.util.Log.w(TAG, "could not write decks", e)
+            warn("could not write decks", e)
         }
     }
 
@@ -366,8 +363,8 @@ class DeckStore(
     }
 
     companion object {
-        private const val FILE_NAME = "decks.json"
-        private const val TAG = "DeckStore"
+        /** What the file is called wherever the platform keeps an app's own files */
+        const val FILE_NAME = "decks.json"
 
         /**
          * 1 was a flat list of cards per deck, 2 groups them into subtopics, 3 gives every card
@@ -390,4 +387,18 @@ class DeckStore(
         private const val SKETCH = "sketch"
         private const val STUDY = "study"
     }
+}
+
+/**
+ * Says that something went wrong, without reaching for a platform's logger.
+ *
+ * This class runs on a phone and on a desktop, and the two have nothing in common to log
+ * through. Standard error is on both, and on Android it arrives in logcat under System.err,
+ * which is where somebody looking for this would look anyway.
+ */
+private fun warn(
+    what: String,
+    e: Exception,
+) {
+    System.err.println("DeckStore: $what: $e")
 }

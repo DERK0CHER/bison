@@ -6,6 +6,8 @@
 // the Kotlin version AGP bundles.
 plugins {
     id("com.android.application") version "9.0.1" apply false
+    // for the modules that are not Android at all: the shared core and the desktop build
+    id("org.jetbrains.kotlin.jvm") version "2.3.21" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
     id("io.github.takahirom.roborazzi") version "1.64.0" apply false
 }

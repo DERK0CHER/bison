@@ -6,17 +6,10 @@ import net.bison.model.Question
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
 /**
  * Tests [QuestionParser] against the shapes a language model actually produces.
- *
- * Robolectric is needed for org.json alone. Under a plain unit test that package comes from the
- * mockable android.jar, whose constructors are empty but whose methods throw: `JSONArray(text)`
- * then appears to parse anything and blows up on the first call against it.
  */
-@RunWith(RobolectricTestRunner::class)
 class QuestionParserTest {
     /**
      * The parser hands back the wider [net.bison.model.Task], because a card can also be code.

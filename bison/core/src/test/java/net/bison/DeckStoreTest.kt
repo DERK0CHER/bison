@@ -13,17 +13,11 @@ import net.bison.model.Subtopic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import java.io.File
 
 /**
  * Tests saving, exporting and restoring.
- *
- * Robolectric is needed for org.json, which comes from the mockable android.jar under a plain
- * unit test and throws on the first call against anything it returns.
  */
-@RunWith(RobolectricTestRunner::class)
 class DeckStoreTest {
     private val file = File.createTempFile("decks", ".json").also { it.deleteOnExit() }
     private val store = DeckStore(file)

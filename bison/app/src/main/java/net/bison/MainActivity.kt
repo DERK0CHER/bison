@@ -38,6 +38,7 @@ import net.bison.ui.LocalImages
 import net.bison.ui.StudyScreen
 import net.bison.ui.SubtopicScreen
 import net.bison.ui.theme.BisonTheme
+import java.io.File
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -47,7 +48,7 @@ class MainActivity : ComponentActivity() {
         // without this the volume keys adjust the ringer while nothing happens to be playing,
         // so a two hundred millisecond tone can never be caught in time to turn it down
         volumeControlStream = AudioManager.STREAM_MUSIC
-        val store = DeckStore(applicationContext)
+        val store = DeckStore(File(applicationContext.filesDir, DeckStore.FILE_NAME))
         val images = ImageStore(applicationContext)
         val settings = Settings(applicationContext)
         setContent {

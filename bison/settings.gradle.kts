@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "Bison"
 
 include(":app")
+include(":core")
