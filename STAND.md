@@ -4,16 +4,14 @@ Notiz zum Weiterarbeiten. Was gebaut wurde, was schiefging, was ungeprüft ist.
 
 ## Kurz
 
-`main` trägt einen halbfertigen Umbau und **war beim Schreiben dieser Notiz nicht
-nachweislich grün**. Der letzte CI-Lauf (`33909993850`, Commit `6de916d`) lief noch, als die
-Arbeit unterbrochen wurde; sein Ausgang ist hier nicht vermerkt, weil er nicht abgewartet
-wurde. Wer weitermacht, schaut **zuerst dort nach**.
+**`main` ist grün.** Lauf `33909993850` auf Commit `6de916d` ist durch, beide Jobs — der Build
+mit den Unit-Tests und die Gesten auf dem Emulator. Das Rolling Release `bison-latest` hält
+jetzt das APK von diesem Stand.
 
-Letzter nachweislich grüner Commit: **`cf61493`** — „Backticks im Kartentext werden zu Code".
-Das Rolling Release `bison-latest` hält das APK von genau diesem Stand, weil die Release nur
-bei einem erfolgreichen Lauf neu geschrieben wird. Auf dem Handy ist also nichts kaputt.
+Der Umbau darunter ist trotzdem halbfertig: `:core` steht und trägt, `:desktop` ist angelegt
+und unvollständig und wird von keinem Job gebaut. Was fehlt, steht weiter unten.
 
-Seither auf `main`:
+Auf `main` seit `cf61493`:
 
 | Commit | Was |
 | --- | --- |
@@ -24,8 +22,8 @@ Seither auf `main`:
 
 ## Die Fehler, der Reihe nach
 
-Vier CI-Läufe, vier Fehlerursachen. Alle vier sind behoben; **behoben heißt hier „der nächste
-Lauf wurde angestoßen", nicht „grün gesehen"**.
+Vier CI-Läufe, vier Fehlerursachen. Alle vier behoben und im grünen Lauf bestätigt. Sie stehen
+hier, weil drei davon beim nächsten Modulschnitt genauso wiederkommen.
 
 ### 1. Smart Cast über eine Modulgrenze
 
@@ -78,16 +76,19 @@ Testhelfer von mir, der eine einzelne `Deck` zurückgab, wo `Progress` eine List
 *Beim nächsten Schnitt:* `grep -rn` über **alle drei** Quellordner (`main`, `test`,
 `androidTest`) und über `:app` **und** `:core`.
 
-## Was ungeprüft ist
+## Was geprüft ist
 
-`:core:test` ist zuletzt in Lauf `33871957144` durchgelaufen — **vor** `Progress`, `Markdown`
-und der Karten-id. Alles seither ist geschrieben und nicht einmal kompiliert worden:
+`:core:test` läuft in der CI vor allem anderen und ist im grünen Lauf durchgekommen. Damit sind
+belegt:
 
-- `Progress` (Export, Einlesen, Zusammenführen, CSV) und `ProgressTest`
-- `Markdown` im Core und `MarkdownTest`
-- `Task.cardId` / `filedAs` / `type` und die Überschreibungen in allen fünf Kartenarten
+- `Progress` — Export, Einlesen, Zusammenführen, CSV, und dass zwei Abende auf zwei Geräten
+  einer werden statt einer von beiden zu gewinnen
+- `Markdown` im Core, aus dem beide Oberflächen lesen
+- `Task.cardId` / `filedAs` / `type` in allen fünf Kartenarten
 - `statusOf`, an das `Card.status` jetzt delegiert
-- die Palette als Zahlen im Core
+
+Nicht belegt, weil noch nichts es benutzt: dass das Format über eine echte Verbindung durchgeht.
+Der Server ist geschrieben und nie gelaufen.
 
 ## `:desktop` ist unvollständig
 
@@ -158,15 +159,17 @@ Der Vergleichertest über die ganze Kartendatei braucht das Set als Fixture. Das
 **öffentlich**. Also: Set hinein, Repo auf privat (dann bricht die Installation per Link), oder
 Test nur lokal?
 
-## Wenn es klemmt
+## Fürs nächste Mal
 
-`main` direkt zu bebauen war bei einem Umbau dieser Größe die falsche Wahl — wer zieht, bekommt
-gerade womöglich einen Stand, der nicht kompiliert. Wenn der nächste Lauf rot ist und keine
-Zeit zum Nachziehen bleibt:
+Der Umbau lief direkt auf `main`, und drei Läufe hintereinander standen dort rot. Ausgegangen
+ist es gut, aber wer in diesen Stunden gezogen hat, bekam einen Stand, der nicht kompilierte.
+Der nächste Schnitt dieser Größe gehört auf einen Zweig — die CI baut `claude/**` genauso.
+
+Wenn ein Stand doch einmal rot festhängt und keine Zeit zum Nachziehen bleibt, setzt
 
 ```bash
-git revert --no-commit da29add..HEAD && git commit -m "revert: Umbau zurueck, bis er grün ist"
+git revert --no-commit <letzter-gruener>..HEAD && git commit -m "revert: Umbau zurueck, bis er grün ist"
 ```
 
-Das setzt auf `cf61493` zurück, ohne die Historie zu verlieren; die Arbeit steht dann in den
-Commits und kann auf einem Zweig fertiggemacht werden.
+zurück, ohne die Historie zu verlieren; die Arbeit steht dann in den Commits und kann auf einem
+Zweig fertiggemacht werden.
