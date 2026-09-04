@@ -140,7 +140,7 @@ fun ImportScreen(
 
             parsed?.let { result ->
                 Spacer(Modifier.height(24.dp))
-                ResultPanel(result)
+                ResultPanel(result = result, read = fileText)
             }
 
             if (found.isNotEmpty()) {
@@ -163,9 +163,20 @@ fun ImportScreen(
     }
 }
 
-/** What the clipboard turned out to contain */
+/**
+ * What was read, and what it turned out to be.
+ *
+ * When nothing was recognised it says what arrived - how much text, and its first line. "Nothing
+ * recognised" on its own cannot tell an empty read from a file that came through whole and was
+ * not understood, and those two have nothing in common but the message.
+ *
+ * @param read the text a picked file produced, if the last attempt came from one
+ */
 @Composable
-private fun ResultPanel(result: CardImport.Result) {
+private fun ResultPanel(
+    result: CardImport.Result,
+    read: String? = null,
+) {
     val found = result.tasks.size
     Column(
         modifier =
@@ -189,14 +200,35 @@ private fun ResultPanel(result: CardImport.Result) {
         if (found == 0) {
             Text(
                 text =
-                    "Steht der Text wirklich in der Zwischenablage oder in der Datei? Erwartet " +
-                        "wird das JSON aus dem Prompt oben, oder eine Kartendatei mit " +
-                        "front:/back:-Feldern.",
+                    when {
+                        read == null ->
+                            "Steht der Text wirklich in der Zwischenablage? Erwartet wird das " +
+                                "JSON aus dem Prompt oben, eine Kartendatei mit front:/back:, " +
+                                "oder ein Kartenset mit type:/front:/logik:/back:."
+
+                        read.isEmpty() ->
+                            "Aus der Datei kam kein Text. Entweder ist sie leer, oder die " +
+                                "App durfte sie nicht lesen — dann noch einmal über den " +
+                                "Dateidialog auswählen statt über eine Verknüpfung."
+
+                        else ->
+                            "Gelesen wurden ${read.length} Zeichen, sie fangen so an:\n" +
+                                read.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty().take(80)
+                    },
                 style = MaterialTheme.typography.bodyMedium,
                 color = BisonColors.TextSecondary,
             )
         } else {
-            Caption(text = if (result.format == CardImport.Format.CardFile) "KARTENDATEI" else "ERSTE FRAGE")
+            // which of the three readers understood it, which is also the quickest way to see
+            // that a file was read by the wrong one
+            Caption(
+                text =
+                    when (result.format) {
+                        CardImport.Format.WrittenSet -> "KARTENSET"
+                        CardImport.Format.CardFile -> "KARTENDATEI"
+                        CardImport.Format.Questions -> "ERSTE FRAGE"
+                    },
+            )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = result.tasks.first().label,

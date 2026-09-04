@@ -191,6 +191,9 @@ private fun BisonApp(
     val importFile =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) {
+                // An empty string rather than null when the read fails: null is also "nothing
+                // has been picked yet", and a screen that cannot tell those apart answers a tap
+                // by doing nothing at all, which is the one thing it must never do.
                 importedText =
                     runCatching {
                         context.contentResolver
@@ -199,6 +202,7 @@ private fun BisonApp(
                             ?.use { it.readText() }
                     }.onFailure { Log.w(TAG, "could not read the card file", it) }
                         .getOrNull()
+                        .orEmpty()
             }
         }
     // The pictures come in on their own, several at a time, and are filed under their own names.
@@ -400,10 +404,11 @@ private const val TAG = "Bison"
 private const val BACKUP_TYPE = "application/json"
 
 /**
- * What the picker offers for a card file.
+ * What the picker offers for a card file: everything.
  *
- * A `.txt` or `.md` written on a desktop and copied over often arrives as
- * `application/octet-stream`, so the catch-all has to be in the list or the file the learner
- * came to fetch would be greyed out.
+ * A `.md` or `.txt` written on a desktop and copied over arrives as `application/octet-stream`
+ * as often as not, so a list of the types it ought to have would grey out the very file the
+ * learner came to fetch. This used to name three types with the catch-all beside them, and
+ * several file pickers take a mixed list as "only these" - so it is one entry now.
  */
-private val CARD_FILE_TYPES = arrayOf("text/*", BACKUP_TYPE, "*/*")
+private val CARD_FILE_TYPES = arrayOf("*/*")

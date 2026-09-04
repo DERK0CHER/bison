@@ -139,6 +139,16 @@ class MarkdownCardsTest {
     }
 
     @Test
+    fun `the dispatcher sends the written set to the reader that knows it`() {
+        val result = net.bison.importer.CardImport.parse(file)
+
+        // read by the older card reader instead, every card would come out as an unknown type
+        // and be skipped - which is what "the file import does not work" looks like from outside
+        assertEquals(net.bison.importer.CardImport.Format.WrittenSet, result.format)
+        assertEquals(2, result.tasks.size)
+    }
+
+    @Test
     fun `a block missing the parts a card needs is counted rather than guessed at`() {
         val broken =
             """
