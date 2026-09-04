@@ -57,6 +57,8 @@ fun SubtopicScreen(
     onStudyTagged: (Set<String>) -> Unit = {},
     onExam: () -> Unit = {},
     onStudyLeeches: () -> Unit = {},
+    reversed: Boolean = false,
+    onReversedChange: (Boolean) -> Unit = {},
 ) {
     // Which labels are being narrowed down to. Held here rather than by the caller: it is the
     // question this screen asks, and it is answered again every time the screen is opened.
@@ -127,6 +129,10 @@ fun SubtopicScreen(
             )
         }
 
+        Spacer(Modifier.height(14.dp))
+        // the reasoning as the question and the answer to be produced: the same cards read the
+        // other way round, which is the direction an exam asks them in
+        PillToggle(checked = reversed, label = "Umgekehrt", onCheckedChange = onReversedChange)
         Spacer(Modifier.height(16.dp))
         if (selected.isEmpty()) {
             BisonButton(text = "Alles gemischt lernen", onClick = onStudyAll)

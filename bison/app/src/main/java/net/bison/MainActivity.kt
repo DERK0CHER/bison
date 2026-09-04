@@ -84,6 +84,8 @@ private sealed interface Screen {
         val subtopicId: String?,
         val tags: Set<String> = emptySet(),
         val pick: Pick = Pick.Due,
+        /** The reasoning as the question, the answer to be produced */
+        val reversed: Boolean = false,
     ) : Screen
 
     /** Setting up a mock paper: how many questions out of each part, and how long */
@@ -119,6 +121,10 @@ private fun BisonApp(
     // The paper being sat, if one is. It lives here rather than in the screen so that it is
     // drawn once, when it is started, rather than again on every recomposition.
     var paper by remember { mutableStateOf<Exam?>(null) }
+
+    // read the cards the other way round: the reasoning as the question. Kept here so it
+    // survives stepping in and out of a set rather than being asked again every time.
+    var reversed by remember { mutableStateOf(false) }
 
     fun persist(updated: List<Deck>) {
         decks = updated
@@ -290,10 +296,12 @@ private fun BisonApp(
                 BackHandler { screen = Screen.Decks }
                 SubtopicScreen(
                     deck = deck,
-                    onOpen = { screen = Screen.Study(deck.id, it.id) },
-                    onStudyAll = { screen = Screen.Study(deck.id, null) },
+                    onOpen = { screen = Screen.Study(deck.id, it.id, reversed = reversed) },
+                    onStudyAll = { screen = Screen.Study(deck.id, null, reversed = reversed) },
                     onBack = { screen = Screen.Decks },
                     onStudyTagged = { screen = Screen.Study(deck.id, null, it) },
+                    reversed = reversed,
+                    onReversedChange = { reversed = it },
                     onExam = { screen = Screen.ExamSetup(deck.id) },
                     onStudyLeeches = { screen = Screen.Study(deck.id, null, pick = Pick.Leeches) },
                 )
@@ -363,6 +371,7 @@ private fun BisonApp(
                     onFinished = { finishStudying(deck.id, current.subtopicId, it) },
                     onLeave = { finishStudying(deck.id, current.subtopicId, it) },
                     onProgress = { keepProgress(deck.id, current.subtopicId, it) },
+                    reversed = current.reversed,
                 )
             }
         }

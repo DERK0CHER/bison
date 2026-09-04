@@ -56,17 +56,20 @@ fun FlipRound(
     card: StudyCard,
     round: String,
     onSubmit: (correct: Boolean) -> Unit,
+    reversed: Boolean = false,
 ) {
-    var turned by remember(card) { mutableStateOf(0) }
-    val stages = if (card.logic == null) 1 else 2
+    var turned by remember(card, reversed) { mutableStateOf(0) }
+    // turned round, the reasoning is the question and there is only the answer left to show
+    val backwards = reversed && card.logic != null
+    val stages = if (card.logic == null || backwards) 1 else 2
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Spacer(Modifier.height(6.dp))
-        Caption(text = round)
+        Caption(text = if (backwards) "$round · umgekehrt" else round)
         Spacer(Modifier.height(14.dp))
-        Prompt(text = card.prompt)
+        Prompt(text = if (backwards) card.logic.orEmpty() else card.prompt)
 
-        if (turned >= 1 && card.logic != null) {
+        if (turned >= 1 && card.logic != null && !backwards) {
             Spacer(Modifier.height(20.dp))
             Caption(text = "LOGIK")
             Spacer(Modifier.height(8.dp))
@@ -170,17 +173,20 @@ fun AnswerRound(
     round: String,
     seed: Int,
     onSubmit: (correct: Boolean) -> Unit,
+    reversed: Boolean = false,
 ) {
     val filled = remember(card, seed) { fill(card, seed) }
-    var typed by remember(filled) { mutableStateOf(TextFieldValue("")) }
-    var verdict by remember(filled) { mutableStateOf<Boolean?>(null) }
+    var typed by remember(filled, reversed) { mutableStateOf(TextFieldValue("")) }
+    var verdict by remember(filled, reversed) { mutableStateOf<Boolean?>(null) }
     val settled = verdict
+    // turned round, the reasoning is the question and the answer is still what gets typed
+    val backwards = reversed && filled.logic != null
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Spacer(Modifier.height(6.dp))
-        Caption(text = round)
+        Caption(text = if (backwards) "$round · umgekehrt" else round)
         Spacer(Modifier.height(14.dp))
-        Prompt(text = filled.prompt)
+        Prompt(text = if (backwards) filled.logic.orEmpty() else filled.prompt)
         Spacer(Modifier.height(18.dp))
 
         Field(

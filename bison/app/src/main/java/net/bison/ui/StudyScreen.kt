@@ -88,6 +88,7 @@ fun StudyScreen(
     onFinished: (List<Card>) -> Unit,
     onLeave: (List<Card>) -> Unit,
     onProgress: (List<Card>) -> Unit = {},
+    reversed: Boolean = false,
 ) {
     val session = remember(key) { StudySession(cards) }
     var picked by remember { mutableStateOf<Int?>(null) }
@@ -255,6 +256,7 @@ fun StudyScreen(
                     FlipRound(
                         card = shown.task as StudyCard,
                         round = target.line,
+                        reversed = reversed,
                         onSubmit = { correct ->
                             if (soundOn) feedback.play(correct = correct)
                             record(correct)
@@ -275,6 +277,7 @@ fun StudyScreen(
                     AnswerRound(
                         card = shown.task as StudyCard,
                         round = target.line,
+                        reversed = reversed,
                         // the round's own number, so a parametrised card stands still while it
                         // is answered and asks something else when it comes back
                         seed = target.index,
