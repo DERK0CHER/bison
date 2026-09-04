@@ -144,6 +144,35 @@ class ScreenshotTest {
         capture("03-import")
     }
 
+    /**
+     * A file that has just been read.
+     *
+     * This is the state that looked broken from the outside: the app had read the set and said
+     * so under three steps of instructions, off the bottom edge, where a tap appears to have
+     * done nothing at all. The button that finishes the job is now outside the scrolling part,
+     * so it is on this picture whatever the page above it does.
+     */
+    @Test
+    fun importScreenAfterReadingAFile() {
+        val set =
+            """
+            # Kartenset
+
+            ## Subsection: MATLAB / Syntax
+
+            ---
+            type: syntax
+            front: Lege einen Spaltenvektor mit 3, 6 und 2 an. Ausgabe unterdrücken.
+            logik: Semikolon trennt Zeilen.
+            back: d = [3;6;2];
+            tags: matlab, syntax
+            """.trimIndent()
+        composeRule.setContent {
+            BisonTheme { ImportScreen(onCancel = {}, onImport = { _, _ -> }, fileText = set) }
+        }
+        capture("22-import-read")
+    }
+
     @Test
     fun studyQuestion() {
         composeRule.setContent {

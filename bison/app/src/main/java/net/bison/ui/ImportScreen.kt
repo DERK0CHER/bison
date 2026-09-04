@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
@@ -60,10 +61,24 @@ fun ImportScreen(
     var promptCopied by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
 
+    val scroll = rememberScrollState()
+
     // The file is picked outside this screen, because the picker belongs to the activity, and
     // its text arrives here. Both ways in end up at the same parser and the same preview.
     LaunchedEffect(fileText) {
         if (fileText != null) parsed = CardImport.parse(fileText)
+    }
+
+    // Carry the reader to what just appeared.
+    //
+    // This screen is three steps long and the answer to "read the file" turned up under all of
+    // them, off the bottom of the screen: the app had done exactly what it was asked and looked
+    // from the outside as though it had done nothing. One frame first, so the panel that just
+    // appeared has been measured and the end of the page is where it now is.
+    LaunchedEffect(parsed) {
+        if (parsed == null) return@LaunchedEffect
+        withFrameNanos { }
+        scroll.animateScrollTo(scroll.maxValue)
     }
 
     val found = parsed?.tasks.orEmpty()
@@ -83,7 +98,7 @@ fun ImportScreen(
             modifier =
                 Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(scroll),
         ) {
             Spacer(Modifier.height(28.dp))
             Text(
@@ -148,16 +163,21 @@ fun ImportScreen(
                 Caption(text = "NAME")
                 Spacer(Modifier.height(8.dp))
                 NameField(value = name, onValueChange = { name = it })
-                Spacer(Modifier.height(20.dp))
-                BisonButton(
-                    text = "${found.size} Karten übernehmen",
-                    onClick = { onImport(name.ifBlank { defaultName(found) }, found) },
-                )
             }
 
             Spacer(Modifier.height(24.dp))
         }
 
+        // The one thing this screen is for stands outside the scrolling part, where it cannot
+        // be missed. It used to sit at the end of three steps of instructions, so reading a
+        // file put the button that finishes the job below the bottom edge.
+        if (found.isNotEmpty()) {
+            BisonButton(
+                text = "${found.size} Karten übernehmen",
+                onClick = { onImport(name.ifBlank { defaultName(found) }, found) },
+            )
+            Spacer(Modifier.height(10.dp))
+        }
         BisonButton(text = "Abbrechen", onClick = onCancel, filled = false)
         Spacer(Modifier.height(20.dp))
     }
